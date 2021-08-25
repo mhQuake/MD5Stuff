@@ -556,7 +556,11 @@ qboolean Host_FilterTime (float time)
 	//johnfitz -- max fps cvar
 	maxfps = CLAMP (10.0, host_maxfps.value, 1000.0);
 	if (!cls.timedemo && realtime - oldrealtime < 1.0/maxfps)
+	{
+		// mh - don't chew battery on mobile.  it's expected that you would do this properly in actual production code
+		Sleep (1);
 		return false; // framerate is too high
+	}
 	//johnfitz
 
 	host_frametime = realtime - oldrealtime;
