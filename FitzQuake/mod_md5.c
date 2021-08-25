@@ -564,19 +564,8 @@ qboolean Mod_LoadMD5Model (model_t *mod, void *buffer)
 	// look for a mesh
 	if (!MD5_ReadMeshFile (va ("%s.md5mesh", copyname), &hdr->md5mesh)) goto md5_bad;
 
-	// look for an animation (this may be optional if the md5 is not animated, in which case we copy a frame from the base mesh)
-	if (!MD5_ReadAnimFile (va ("%s.md5anim", copyname), &hdr->md5anim))
-	{
-		// just set it up; we'll be evaluating our own bboxes from the vertex position data so it's OK to leave this NULL
-		hdr->md5anim.bboxes = NULL;
-		hdr->md5anim.frameRate = 10; // unused in our code; can be anything
-		hdr->md5anim.num_frames = 1; // one frame only
-
-		// and take the frame from the base mesh
-		hdr->md5anim.num_joints = hdr->md5mesh.num_joints;
-		hdr->md5anim.skelFrames = (struct md5_joint_t **) Hunk_Alloc (sizeof (struct md5_joint_t *));
-		hdr->md5anim.skelFrames[0] = hdr->md5mesh.baseSkel;
-	}
+	// look for an animation
+	if (!MD5_ReadAnimFile (va ("%s.md5anim", copyname), &hdr->md5anim)) goto md5_bad;
 
 	// validate the frames
 	if (hdr->md5anim.num_frames == 2 && mdlframes == 1)
