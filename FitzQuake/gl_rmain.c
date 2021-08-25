@@ -480,15 +480,17 @@ void R_DrawEntitiesOnList (qboolean alphapass) //johnfitz -- added parameter
 
 		switch (currententity->model->type)
 		{
-			case mod_alias:
-				R_DrawAliasModel (currententity);
-				break;
-			case mod_brush:
-				R_DrawBrushModel (currententity);
-				break;
-			case mod_sprite:
-				R_DrawSpriteModel (currententity);
-				break;
+		case mod_md5:
+			break;
+		case mod_alias:
+			R_DrawAliasModel (currententity);
+			break;
+		case mod_brush:
+			R_DrawBrushModel (currententity);
+			break;
+		case mod_sprite:
+			R_DrawSpriteModel (currententity);
+			break;
 		}
 	}
 }
@@ -511,13 +513,18 @@ void R_DrawViewModel (void)
 		return;
 
 	//johnfitz -- this fixes a crash
-	if (currententity->model->type != mod_alias)
+	if (currententity->model->type != mod_alias && currententity->model->type != mod_md5)
 		return;
 	//johnfitz
 
 	// hack the depth range to prevent view model from poking into walls
 	glDepthRange (0, 0.3);
-	R_DrawAliasModel (currententity);
+
+	if (currententity->model->type == mod_alias)
+		R_DrawAliasModel (currententity);
+	else if (currententity->model->type == mod_md5)
+		;
+
 	glDepthRange (0, 1);
 }
 
@@ -656,6 +663,8 @@ void R_ShowTris (void)
 
 			switch (currententity->model->type)
 			{
+			case mod_md5:
+				break;
 			case mod_brush:
 				R_DrawBrushModel_ShowTris (currententity);
 				break;
@@ -678,10 +687,15 @@ void R_ShowTris (void)
 			&& cl.stats[STAT_HEALTH] > 0
 			&& !(cl.items & IT_INVISIBILITY)
 			&& currententity->model
-			&& currententity->model->type == mod_alias)
+			&& (currententity->model->type == mod_alias || currententity->model->type == mod_md5))
 		{
 			glDepthRange (0, 0.3);
-			R_DrawAliasModel_ShowTris (currententity);
+
+			if (currententity->model->type == mod_alias)
+				R_DrawAliasModel_ShowTris (currententity);
+			else if (currententity->model->type == mod_md5)
+				;
+
 			glDepthRange (0, 1);
 		}
 	}

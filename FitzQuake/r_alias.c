@@ -732,3 +732,5 @@ void R_DrawAliasModel_ShowTris (entity_t *e)
 
 	glPopMatrix ();
 }
+
+

@@ -315,6 +315,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\mod_md5.c"
+				>
+			</File>
+			<File
 				RelativePath=".\net_dgrm.c"
 				>
 			</File>
@@ -356,6 +360,10 @@
 			</File>
 			<File
 				RelativePath=".\r_brush.c"
+				>
+			</File>
+			<File
+				RelativePath=".\r_md5.c"
 				>
 			</File>
 			<File
