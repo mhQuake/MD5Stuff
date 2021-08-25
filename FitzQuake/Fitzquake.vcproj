@@ -355,6 +355,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\quatlib.c"
+				>
+			</File>
+			<File
 				RelativePath=".\r_alias.c"
 				>
 			</File>

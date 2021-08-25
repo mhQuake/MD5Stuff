@@ -264,6 +264,162 @@ typedef struct
 /*
 ==============================================================================
 
+MD5 MODELS
+
+==============================================================================
+*/
+
+// quaternion (x, y, z, w)
+typedef float quat4_t[4];
+typedef vec_t vec2_t[2];
+
+void Quat_computeW (quat4_t q);
+void Quat_normalize (quat4_t q);
+void Quat_multQuat (const quat4_t qa, const quat4_t qb, quat4_t out);
+void Quat_multVec (const quat4_t q, const vec3_t v, quat4_t out);
+void Quat_rotatePoint (const quat4_t q, const vec3_t in, vec3_t out);
+float Quat_dotProduct (const quat4_t qa, const quat4_t qb);
+void Quat_slerp (const quat4_t qa, const quat4_t qb, float t, quat4_t out);
+
+
+// Joint
+struct md5_joint_t
+{
+	char name[64];
+	int parent;
+
+	vec3_t pos;
+	quat4_t orient;
+};
+
+// Vertex
+struct md5_vertex_t
+{
+	vec2_t st;
+
+	int start; // start weight
+	int count; // weight count
+};
+
+// Triangle
+struct md5_triangle_t
+{
+	int index[3];
+};
+
+// Weight
+struct md5_weight_t
+{
+	int joint;
+	float bias;
+
+	vec3_t pos;
+};
+
+// Bounding box
+struct md5_bbox_t
+{
+	vec3_t min;
+	vec3_t max;
+};
+
+// MD5 mesh
+struct md5_mesh_t
+{
+	struct md5_vertex_t *vertices;
+	struct md5_triangle_t *triangles;
+	struct md5_weight_t *weights;
+
+	int num_verts;
+	int num_tris;
+	int num_weights;
+
+	char shader[256];
+};
+
+// MD5 model structure
+struct md5_model_t
+{
+	struct md5_joint_t *baseSkel;
+	struct md5_mesh_t *meshes;
+
+	int num_joints;
+	int num_meshes;
+};
+
+// Animation data
+struct md5_anim_t
+{
+	int num_frames;
+	int num_joints;
+	int frameRate;
+
+	struct md5_joint_t **skelFrames;
+	struct md5_bbox_t *bboxes;
+};
+
+
+// Joint info
+struct joint_info_t
+{
+	char name[64];
+	int parent;
+	int flags;
+	int startIndex;
+};
+
+// Base frame joint
+struct baseframe_joint_t
+{
+	vec3_t pos;
+	quat4_t orient;
+};
+
+// vertex normals calculation
+typedef struct vertexnormals_s
+{
+	int numnormals;
+	float normal[3];
+} vertexnormals_t;
+
+typedef struct md5polyvert_s
+{
+	float position[3];
+	float colour[4];
+	float texcoord[2];
+} md5polyvert_t;
+
+typedef struct skinpair_s {
+	struct gltexture_s *tx;
+	struct gltexture_s *fb;
+} skinpair_t;
+
+typedef struct md5skin_s {
+	skinpair_t *image;
+	int numskins;
+} md5skin_t;
+
+typedef struct md5header_s
+{
+	struct md5_model_t md5mesh;
+	struct md5_anim_t md5anim;
+
+	md5polyvert_t *vertexes;
+	int numvertexes;
+
+	unsigned short *indexes;
+	int numindexes;
+
+	struct md5_joint_t *skeleton;
+
+	md5skin_t *skins;
+	int numskins;
+} md5header_t;
+
+
+/*
+==============================================================================
+
 ALIAS MODELS
 
 Alias models are position independent, so the cache manager can move them.
@@ -451,4 +607,16 @@ void	Mod_TouchModel (char *name);
 mleaf_t *Mod_PointInLeaf (float *p, model_t *model);
 byte	*Mod_LeafPVS (mleaf_t *leaf, model_t *model);
 
+//johnfitz -- struct for passing lerp information to drawing functions
+// mh - transferred from r_alias.c because it's now common to alias and MD5
+typedef struct {
+	short pose1;
+	short pose2;
+	float blend;
+	vec3_t origin;
+	vec3_t angles;
+} lerpdata_t;
+//johnfitz
+
 #endif	// __MODEL__
+

@@ -481,6 +481,7 @@ void R_DrawEntitiesOnList (qboolean alphapass) //johnfitz -- added parameter
 		switch (currententity->model->type)
 		{
 		case mod_md5:
+			R_DrawMD5Model (currententity);
 			break;
 		case mod_alias:
 			R_DrawAliasModel (currententity);
@@ -523,7 +524,7 @@ void R_DrawViewModel (void)
 	if (currententity->model->type == mod_alias)
 		R_DrawAliasModel (currententity);
 	else if (currententity->model->type == mod_md5)
-		;
+		R_DrawMD5Model (currententity);
 
 	glDepthRange (0, 1);
 }
