@@ -969,6 +969,66 @@ void COM_DefaultExtension (char *path, char *extension)
 
 /*
 ==============
+COM_ParseLine
+
+parse a full line out of a text stream
+==============
+*/
+char *COM_ParseLine (char *data)
+{
+	int i = 0;
+
+	if (!data) return NULL;		// nothing to parse
+	if (!*data) return NULL;	// end of stream
+
+	com_token[0] = 0;
+
+	while (1)
+	{
+		if (!*data) break;	// end of stream
+
+		// newline
+		if (*data == '\n')
+		{
+			// skip the line separator
+			data++;
+
+			// handle \n\r
+			if (*data && *data == '\r') data++;
+
+			break;
+		}
+
+		// newline
+		if (*data == '\r')
+		{
+			// skip the line separator
+			data++;
+
+			// handle \r\n
+			if (*data && *data == '\n') data++;
+
+			break;
+		}
+
+		// copy it over
+		com_token[i++] = *data++;
+	}
+
+	// skip empty lines
+	if (i == 0)
+		return COM_ParseLine (data);
+
+	// NUll-terminate the token
+	com_token[i] = 0;
+
+	// and return the new data pointer
+	return data;
+}
+
+
+/*
+==============
 COM_Parse
 
 Parse a token out of a string

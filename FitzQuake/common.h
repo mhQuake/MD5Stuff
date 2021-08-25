@@ -145,6 +145,7 @@ extern	char		com_token[1024];
 extern	qboolean	com_eof;
 
 char *COM_Parse (char *data);
+char *COM_ParseLine (char *data);
 
 
 extern	int		com_argc;
