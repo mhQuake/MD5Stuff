@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 
-extern qboolean mtexenabled; //johnfitz
+extern qboolean mtexenabled, overbright; //johnfitz
 extern cvar_t r_drawflat, gl_overbright_models, gl_fullbrights, r_lerpmodels, r_lerpmove; //johnfitz
 
 extern vec3_t	lightcolor; //johnfitz -- replaces "float shadelight" for lit support
@@ -228,20 +228,29 @@ static void MD5_PrepareMesh (const struct md5_mesh_t *mesh, const struct md5_joi
 }
 
 
-void R_SetupMD5SkinTextures (entity_t *e, md5header_t *hdr)
+skinpair_t *R_SetupMD5SkinTextures (entity_t *e, md5header_t *hdr)
 {
 	// auto-animation
 	md5skin_t *skin = &hdr->skins[e->skinnum % hdr->numskins];
-	skinpair_t *image = &skin->image[(int) ((cl.time + e->syncbase) * 10) % skin->numskins];
+	return &skin->image[(int) ((cl.time + e->syncbase) * 10) % skin->numskins];
+}
 
-	gltexture_t *tx = image->tx;
-	gltexture_t *fb = image->fb;
 
-	if (!gl_fullbrights.value)
-		fb = NULL;
+qboolean R_CullMD5Model (lerpdata_t lerpdata, const struct md5_anim_t *anim)
+{
+	float mins[3] = {
+		anim->bboxes[lerpdata.pose1].min[0] * (1.0f - lerpdata.blend) + anim->bboxes[lerpdata.pose2].min[0] * lerpdata.blend + lerpdata.origin[0],
+		anim->bboxes[lerpdata.pose1].min[1] * (1.0f - lerpdata.blend) + anim->bboxes[lerpdata.pose2].min[1] * lerpdata.blend + lerpdata.origin[1],
+		anim->bboxes[lerpdata.pose1].min[2] * (1.0f - lerpdata.blend) + anim->bboxes[lerpdata.pose2].min[2] * lerpdata.blend + lerpdata.origin[2]
+	};
 
-	GL_DisableMultitexture ();
-	GL_Bind (tx);
+	float maxs[3] = {
+		anim->bboxes[lerpdata.pose1].max[0] * (1.0f - lerpdata.blend) + anim->bboxes[lerpdata.pose2].max[0] * lerpdata.blend + lerpdata.origin[0],
+		anim->bboxes[lerpdata.pose1].max[1] * (1.0f - lerpdata.blend) + anim->bboxes[lerpdata.pose2].max[1] * lerpdata.blend + lerpdata.origin[1],
+		anim->bboxes[lerpdata.pose1].max[2] * (1.0f - lerpdata.blend) + anim->bboxes[lerpdata.pose2].max[2] * lerpdata.blend + lerpdata.origin[2]
+	};
+
+	return R_CullBox (mins, maxs);
 }
 
 
@@ -249,19 +258,22 @@ void R_DrawMD5Model (entity_t *e)
 {
 	md5header_t *hdr = (md5header_t *) e->model->cache.data;
 	lerpdata_t	lerpdata;
+	skinpair_t *image;
 
 	R_SetupMD5Frame (e->frame, &lerpdata);
 	R_SetupEntityTransform (e, &lerpdata);
 
-	// cull it - do this yourself
-	//if (R_CullModelForEntity (e))
-	//	return;
+	// cull it
+	if (e != &cl.viewent)
+		if (R_CullMD5Model (lerpdata, &hdr->md5anim))
+			return;
 
 	// transform it
     glPushMatrix ();
 	R_RotateForEntity (lerpdata.origin, lerpdata.angles);
 
 	// set up lighting
+	overbright = gl_overbright_models.value;
 	rs_aliaspolys += hdr->numindexes / 3;
 	R_SetupAliasLighting (e);
 
@@ -272,7 +284,10 @@ void R_DrawMD5Model (entity_t *e)
 	VectorNormalize (shadevector);
 
 	// textures
-	R_SetupMD5SkinTextures (e, hdr);
+	image = R_SetupMD5SkinTextures (e, hdr);
+
+	GL_DisableMultitexture ();
+	GL_Bind (image->tx);
 
 	// run the skeletal animation
 	MD5_InterpolateSkeletons (hdr->md5anim.skelFrames[lerpdata.pose1], hdr->md5anim.skelFrames[lerpdata.pose2], hdr->md5anim.num_joints, lerpdata.blend, hdr->skeleton);
@@ -290,12 +305,101 @@ void R_DrawMD5Model (entity_t *e)
 	glColorPointer (4, GL_FLOAT, sizeof (md5polyvert_t), hdr->vertexes->colour);
 	glTexCoordPointer (2, GL_FLOAT, sizeof (md5polyvert_t), hdr->vertexes->texcoord);
 
-	glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+	if (gl_smoothmodels.value && !r_drawflat_cheatsafe)
+		glShadeModel (GL_SMOOTH);
+	if (gl_affinemodels.value)
+		glHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST);
 
 	// draw it
-	glDrawElements (GL_TRIANGLES, hdr->numindexes, GL_UNSIGNED_SHORT, hdr->indexes);
+	if (r_drawflat_cheatsafe)
+	{
+		glDisable (GL_TEXTURE_2D);
+		glShadeModel (GL_FLAT);
+		glDrawElements (GL_TRIANGLES, hdr->numindexes, GL_UNSIGNED_SHORT, hdr->indexes);
+		glEnable (GL_TEXTURE_2D);
+	}
+	else if (r_fullbright_cheatsafe)
+	{
+		glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+		glDrawElements (GL_TRIANGLES, hdr->numindexes, GL_UNSIGNED_SHORT, hdr->indexes);
+	}
+	else if (r_lightmap_cheatsafe)
+	{
+		glDisable (GL_TEXTURE_2D);
+		glDrawElements (GL_TRIANGLES, hdr->numindexes, GL_UNSIGNED_SHORT, hdr->indexes);
+		glEnable (GL_TEXTURE_2D);
+	}
+	else
+	{
+		if (overbright)
+		{
+			if (gl_texture_env_combine)
+			{
+				// single-pass it
+				glTexEnvi (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE_EXT);
+				glTexEnvi (GL_TEXTURE_ENV, GL_COMBINE_RGB_EXT, GL_MODULATE);
+				glTexEnvi (GL_TEXTURE_ENV, GL_SOURCE0_RGB_EXT, GL_TEXTURE);
+				glTexEnvi (GL_TEXTURE_ENV, GL_SOURCE1_RGB_EXT, GL_PRIMARY_COLOR_EXT);
+				glTexEnvf (GL_TEXTURE_ENV, GL_RGB_SCALE_EXT, 2.0f);
 
+				glDrawElements (GL_TRIANGLES, hdr->numindexes, GL_UNSIGNED_SHORT, hdr->indexes);
+
+				glTexEnvf (GL_TEXTURE_ENV, GL_RGB_SCALE_EXT, 1.0f);
+				glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+			}
+			else
+			{
+				// first pass
+				glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+				glDrawElements (GL_TRIANGLES, hdr->numindexes, GL_UNSIGNED_SHORT, hdr->indexes);
+
+				// second pass
+				glEnable (GL_BLEND);
+				glBlendFunc (GL_ONE, GL_ONE);
+				glDepthMask (GL_FALSE);
+
+				Fog_StartAdditive ();
+				glDrawElements (GL_TRIANGLES, hdr->numindexes, GL_UNSIGNED_SHORT, hdr->indexes);
+				Fog_StopAdditive ();
+
+				glDepthMask (GL_TRUE);
+				glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+				glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+				glDisable (GL_BLEND);
+			}
+		}
+		else
+		{
+			// one pass only
+			glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+			glDrawElements (GL_TRIANGLES, hdr->numindexes, GL_UNSIGNED_SHORT, hdr->indexes);
+		}
+
+		// fullbright mask (if present)
+		if (image->fb && gl_fullbrights.value)
+		{
+			GL_Bind (image->fb);
+			glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+			glEnable (GL_BLEND);
+			glBlendFunc (GL_ONE, GL_ONE);
+			glDepthMask (GL_FALSE);
+
+			Fog_StartAdditive ();
+			glDrawElements (GL_TRIANGLES, hdr->numindexes, GL_UNSIGNED_SHORT, hdr->indexes);
+			Fog_StopAdditive ();
+
+			glDepthMask (GL_TRUE);
+			glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+			glDisable (GL_BLEND);
+		}
+	}
+
+	// revert state
 	glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+	glHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+	glShadeModel (GL_FLAT);
+	glDepthMask (GL_TRUE);
+	glDisable (GL_BLEND);
 
 	// shut down arrays
 	glDisableClientState (GL_VERTEX_ARRAY);

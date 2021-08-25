@@ -672,7 +672,7 @@ int WINAPI WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 	static char debugcmdline[1024] = { 0 };
 
 	// set up a bunch of lovely cheesy hacks to make this look the way i want it to for testing
-	strcpy (debugcmdline, "-width 1024 -height 600 -window -basedir C:\\Games\\Q1 +fov 106 +scr_conspeed 300000");
+	strcpy (debugcmdline, "-width 1024 -height 600 -window -basedir C:\\Games\\Q1 +fov 106 +scr_conspeed 300000 +r_oldwater 0");
 	lpCmdLine = debugcmdline;
 #endif
 

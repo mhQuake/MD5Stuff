@@ -26,6 +26,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "quakedef.h"
 
 extern model_t *loadmodel;
+qboolean Mod_CheckFullbrights (byte *pixels, int count);
+
 
 /*
 ==================
@@ -441,8 +443,19 @@ void MD5_BuildIndexArray (md5header_t *hdr, struct md5_mesh_t *mesh)
 
 static void MD5_LoadSingleSkin (char *name, skinpair_t *out, qpic_t *in)
 {
-	out->tx = TexMgr_LoadImage (loadmodel, name, in->width, in->height, SRC_INDEXED, in->data, name, 0, TEXPREF_MIPMAP | TEXPREF_PAD);
-	out->fb = NULL;
+	if (Mod_CheckFullbrights (in->data, in->width * in->height))
+	{
+		char fbr_mask_name[256];
+		sprintf (fbr_mask_name, "%s_glow", name);
+
+		out->tx = TexMgr_LoadImage (loadmodel, name, in->width, in->height, SRC_INDEXED, in->data, name, 0, TEXPREF_MIPMAP | TEXPREF_PAD | TEXPREF_NOBRIGHT);
+		out->fb = TexMgr_LoadImage (loadmodel, fbr_mask_name, in->width, in->height, SRC_INDEXED, in->data, name, 0, TEXPREF_MIPMAP | TEXPREF_PAD | TEXPREF_FULLBRIGHT);
+	}
+	else
+	{
+		out->tx = TexMgr_LoadImage (loadmodel, name, in->width, in->height, SRC_INDEXED, in->data, name, 0, TEXPREF_MIPMAP | TEXPREF_PAD);
+		out->fb = NULL;
+	}
 }
 
 
@@ -496,7 +509,7 @@ static void MD5_LoadSkins (md5header_t *hdr, char *shader)
 		// if we got animations for this skin then store it out, otherwise we're done
 		if (numskins > 0)
 		{
-			// store it out - skin loading is deferred to after we've thrown away the temp memory so we can safely alloc on the hunk again now....
+			// store it out
 			allskins[hdr->numskins].image = (skinpair_t *) Hunk_Alloc (numskins * sizeof (skinpair_t));
 			memcpy (allskins[hdr->numskins].image, image, numskins * sizeof (skinpair_t));
 
@@ -512,7 +525,7 @@ static void MD5_LoadSkins (md5header_t *hdr, char *shader)
 	// see did we get any skins
 	if (hdr->numskins > 0)
 	{
-		// skin loading is deferred to after we've thrown away the temp memory so we can safely alloc on the hunk again now....
+		// store it out
 		hdr->skins = (md5skin_t *) Hunk_Alloc (hdr->numskins * sizeof (md5skin_t));
 		memcpy (hdr->skins, allskins, hdr->numskins * sizeof (md5skin_t));
 	}

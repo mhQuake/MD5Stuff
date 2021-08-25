@@ -1025,6 +1025,13 @@ void TexMgr_LoadImage8 (gltexture_t *glt, byte *data)
 		memcpy (data, data + 32*31, 32);
 	}
 
+	// another content hack - these texels are fullbright on the original MDL skin but were not on the MD5 replacement, so put them back how they should be
+	if (glt->width == 256 && glt->height == 256 && CRC_Block (data, 256 * 256) == 13002 && strstr (glt->name, "soldier_00_00.lmp"))
+	{
+		data[46827] = data[46828] = data[46829] = data[47083] = data[47084] = data[47085] = data[47340] = data[47341] = 248;
+		data[47339] = 247;
+	}
+
 	// detect false alpha cases
 	if (glt->flags & TEXPREF_ALPHA && !(glt->flags & TEXPREF_CONCHARS))
 	{
