@@ -441,8 +441,6 @@ void MD5_BuildIndexArray (md5header_t *hdr, struct md5_mesh_t *mesh)
 
 static void MD5_LoadSingleSkin (char *name, skinpair_t *out, qpic_t *in)
 {
-	memset (in->data, 15, in->width * in->height);
-
 	out->tx = TexMgr_LoadImage (loadmodel, name, in->width, in->height, SRC_INDEXED, in->data, name, 0, TEXPREF_MIPMAP | TEXPREF_PAD);
 	out->fb = NULL;
 }
@@ -584,6 +582,9 @@ qboolean Mod_LoadMD5Model (model_t *mod, void *buffer)
 
 	// allocate memory for the animated skeleton
 	hdr->skeleton = (struct md5_joint_t *) Hunk_Alloc (sizeof (struct md5_joint_t) * hdr->md5anim.num_joints);
+
+	// allocate memory for normals
+	hdr->vnorms = (vertexnormals_t *) Hunk_Alloc (sizeof (vertexnormals_t) * hdr->numvertexes);
 
 	// load textures from .lmp files
 	MD5_LoadSkins (hdr, hdr->md5mesh.meshes[0].shader);

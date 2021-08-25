@@ -671,7 +671,8 @@ int WINAPI WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 	// mh - compose a cmdline allowing this to run
 	static char debugcmdline[1024] = { 0 };
 
-	strcpy (debugcmdline, "-width 1024 -height 600 -window -basedir C:\\Games\\Q1");
+	// set up a bunch of lovely cheesy hacks to make this look the way i want it to for testing
+	strcpy (debugcmdline, "-width 1024 -height 600 -window -basedir C:\\Games\\Q1 +fov 106 +scr_conspeed 300000");
 	lpCmdLine = debugcmdline;
 #endif
 

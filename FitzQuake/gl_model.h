@@ -410,6 +410,7 @@ typedef struct md5header_s
 	unsigned short *indexes;
 	int numindexes;
 
+	vertexnormals_t *vnorms;
 	struct md5_joint_t *skeleton;
 
 	md5skin_t *skins;

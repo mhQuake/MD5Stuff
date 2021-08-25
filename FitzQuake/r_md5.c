@@ -126,7 +126,7 @@ MD5_PrepareMesh
 
 ==================
 */
-static void MD5_PrepareMesh (const struct md5_mesh_t *mesh, const struct md5_joint_t *skeleton, md5polyvert_t *vertexes)
+static void MD5_PrepareMesh (const struct md5_mesh_t *mesh, const struct md5_joint_t *skeleton, md5polyvert_t *vertexes, vertexnormals_t *vnorms)
 {
 	int i, j;
 
@@ -134,7 +134,6 @@ static void MD5_PrepareMesh (const struct md5_mesh_t *mesh, const struct md5_joi
 	for (i = 0; i < mesh->num_verts; i++)
 	{
 		vec3_t finalVertex = {0.0f, 0.0f, 0.0f};
-		float Angle;
 
 		// Calculate final vertex to draw with weights
 		for (j = 0; j < mesh->vertices[i].count; j++)
@@ -156,17 +155,69 @@ static void MD5_PrepareMesh (const struct md5_mesh_t *mesh, const struct md5_joi
 		vertexes[i].position[0] = finalVertex[0];
 		vertexes[i].position[1] = finalVertex[1];
 		vertexes[i].position[2] = finalVertex[2];
+	}
 
-		// normalise the position as a cheesy normal - this effectively projects the position out to a point on a unit sphere centered on the model origin,
-		// which is a really cheesy substitute for real normals, but Quake MDL lighting never pretended to be ultra-accurate anyway
-		VectorNormalize (finalVertex);
+	for (i = 0; i < mesh->num_verts; i++)
+	{
+		// no normals initially
+		vnorms[i].normal[0] = vnorms[i].normal[1] = vnorms[i].normal[2] = 0;
+		vnorms[i].numnormals = 0;
+	}
+
+	for (i = 0; i < mesh->num_tris; i++)
+	{
+		float triverts[3][3];
+		float vtemp1[3], vtemp2[3], normal[3];
+
+		// undo the vertex rotation from modelgen.c here too
+		for (j = 0; j < 3; j++)
+		{
+			triverts[j][0] = vertexes[mesh->triangles[i].index[j]].position[1];
+			triverts[j][1] = -vertexes[mesh->triangles[i].index[j]].position[0];
+			triverts[j][2] = vertexes[mesh->triangles[i].index[j]].position[2];
+		}
+
+		// calc the per-triangle normal
+		VectorSubtract (triverts[0], triverts[1], vtemp1);
+		VectorSubtract (triverts[2], triverts[1], vtemp2);
+		CrossProduct (vtemp1, vtemp2, normal);
+		VectorNormalize (normal);
+
+		// and accumulate it into the calculated normals array
+		for (j = 0; j < 3; j++)
+		{
+			// rotate the normal so the model faces down the positive x axis
+			vnorms[mesh->triangles[i].index[j]].normal[0] -= normal[1];
+			vnorms[mesh->triangles[i].index[j]].normal[1] += normal[0];
+			vnorms[mesh->triangles[i].index[j]].normal[2] += normal[2];
+
+			// count the normals for averaging
+			vnorms[mesh->triangles[i].index[j]].numnormals++;
+		}
+	}
+
+	// calculate final normal and set up lighting
+	for (i = 0; i < mesh->num_verts; i++)
+	{
+		float Angle;
+
+		// numnormals was checked for > 0 in modelgen.c so we shouldn't need to do it again 
+		// here but we do anyway just in case a rogue modder has used a bad modelling tool
+		if (vnorms[i].numnormals > 0)
+		{
+			VectorScale (vnorms[i].normal, (float) vnorms[i].numnormals, vnorms[i].normal);
+			VectorNormalize (vnorms[i].normal);
+		}
+		else
+		{
+			vnorms[i].normal[0] = vnorms[i].normal[1] = 0;
+			vnorms[i].normal[2] = 1;
+		}
 
 		// this calc isn't correct per-theory but it matches with the calc used by light.exe and qrad.exe
-		Angle = DotProduct (finalVertex, shadevector);
-
-		/*if (Angle < 0)
+		if ((Angle = DotProduct (vnorms[i].normal, shadevector)) < 0)
 			Angle = 0.5f;
-		else*/ //Angle = Angle * 0.5f + 0.5f;
+		else Angle = Angle * 0.5f + 0.5f;
 
 		// store out colour
 		vertexes[i].colour[0] = lightcolor[0] * Angle;
@@ -214,6 +265,12 @@ void R_DrawMD5Model (entity_t *e)
 	rs_aliaspolys += hdr->numindexes / 3;
 	R_SetupAliasLighting (e);
 
+	// set up shadevector from the specified yaw angle
+	shadevector[0] = cos (-(e->angles[1] / 180 * M_PI));
+	shadevector[1] = sin (-(e->angles[1] / 180 * M_PI));
+	shadevector[2] = 1;
+	VectorNormalize (shadevector);
+
 	// textures
 	R_SetupMD5SkinTextures (e, hdr);
 
@@ -221,7 +278,7 @@ void R_DrawMD5Model (entity_t *e)
 	MD5_InterpolateSkeletons (hdr->md5anim.skelFrames[lerpdata.pose1], hdr->md5anim.skelFrames[lerpdata.pose2], hdr->md5anim.num_joints, lerpdata.blend, hdr->skeleton);
 
 	// set up the vertex array
-	MD5_PrepareMesh (&hdr->md5mesh.meshes[0], hdr->skeleton, hdr->vertexes);
+	MD5_PrepareMesh (&hdr->md5mesh.meshes[0], hdr->skeleton, hdr->vertexes, hdr->vnorms);
 
 	// set up arrays
 	glEnableClientState (GL_VERTEX_ARRAY);
