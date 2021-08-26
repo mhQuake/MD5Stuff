@@ -42,9 +42,6 @@ typedef struct md5polyvert_s
 	float texcoord[2];
 } md5polyvert_t;
 
-// this should be arbitrarily large enough to hold our largest MD5
-#define MAX_MD5_VERTEXES	65536
-
 // store a single copy rather than individual vertex arrays per mesh
 md5polyvert_t r_md5vertexes[MAX_MD5_VERTEXES];
 

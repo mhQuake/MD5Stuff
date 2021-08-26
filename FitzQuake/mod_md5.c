@@ -505,7 +505,7 @@ qboolean Mod_LoadMD5Model (model_t *mod, void *buffer)
 	int mdlflags = LittleLong (pinmodel->flags);
 	int mdlsynctype = LittleLong (pinmodel->synctype);
 
-	// we can't mutate the original model name so we must copy it off for loading
+	// we can't change the original model name so we must copy it off for loading
 	char copyname[64];
 
 	// everything after this is freed if the load fails
@@ -534,6 +534,9 @@ qboolean Mod_LoadMD5Model (model_t *mod, void *buffer)
 	// the MD5 spec allows for more than 1 mesh but we don't need to support it for Quake21 content
 	if (hdr->md5mesh.num_meshes > 1) goto md5_bad;
 
+	// don't load MD5s that are too big
+	if (hdr->md5mesh.meshes[0].num_verts > MAX_MD5_VERTEXES) goto md5_bad;
+
 	// allocate memory for the animated skeleton
 	hdr->skeleton = (struct md5_joint_t *) Hunk_Alloc (sizeof (struct md5_joint_t) * hdr->md5anim.num_joints);
 
@@ -548,9 +551,11 @@ qboolean Mod_LoadMD5Model (model_t *mod, void *buffer)
 	mod->type = mod_md5;
 
 	// mh - using certain properties the same as the source MDL
+	// don't change the physics cullboxes; instead we'll use the per-frame cullboxes stored in the MD5 itself.
 	mod->mins[0] = mod->mins[1] = mod->mins[2] = -16;
 	mod->maxs[0] = mod->maxs[1] = mod->maxs[2] = 16;
 
+	// copy these over as well
 	mod->flags = mdlflags;
 	mod->synctype = mdlsynctype;
 
@@ -559,7 +564,6 @@ qboolean Mod_LoadMD5Model (model_t *mod, void *buffer)
 
 	// jump-out point for a bad/mismatched replacement
 md5_bad:;
-
 	// failed; free all memory and returns false
 	Hunk_FreeToLowMark (mark);
 

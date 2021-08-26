@@ -406,6 +406,11 @@ typedef struct md5header_s
 } md5header_t;
 
 
+// this should be arbitrarily large enough to hold our largest MD5
+// we use 16-bit indices so a vertex index can never exceed this limit
+#define MAX_MD5_VERTEXES	65536
+
+
 /*
 ==============================================================================
 
