@@ -183,11 +183,22 @@ void Mod_ClearAll (void)
 	model_t	*mod;
 
 	for (i=0 , mod=mod_known ; i<mod_numknown ; i++, mod++)
+	{
+		// fixes a texture corruption bug that can occur when a MD5 texture is freed and it's slot gets reused by something else, but that texture was
+		// previously a playertexture, which would cause the new texture to become colormapped!!!!!  this occurs because MD5s aren't Cache_Alloc'ed so
+		// they need special handling here to (1) set the model slot to need to reload, but (2) persist the texture slots.
+		if (mod->type == mod_md5)
+		{
+			mod->needload = true;
+			continue;
+		}
+
 		if (mod->type != mod_alias)
 		{
 			mod->needload = true;
 			TexMgr_FreeTexturesForOwner (mod); //johnfitz
 		}
+	}
 }
 
 /*

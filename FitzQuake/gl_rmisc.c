@@ -345,6 +345,7 @@ void R_TranslateNewPlayerSkin (int playernum)
 	R_TranslatePlayerSkin (playernum);
 }
 
+
 /*
 ===============
 R_NewGame -- johnfitz -- handle a game switch
