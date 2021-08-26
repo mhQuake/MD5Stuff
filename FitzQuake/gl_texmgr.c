@@ -410,6 +410,31 @@ void TexMgr_FreeTexturesForOwner (model_t *owner)
 ================================================================================
 */
 
+static void Check_Gamma (unsigned char *pal)
+{
+	float	f, inf;
+	int		i;
+	float	gamma;
+
+	if ((i = COM_CheckParm ("-gamma")) == 0)
+		return;
+	else gamma = Q_atof (com_argv[i + 1]);
+
+	for (i = 0; i < 768; i++)
+	{
+		f = pow ((pal[i] + 1) / 256.0, gamma);
+		inf = f * 255 + 0.5;
+
+		if (inf < 0)
+			inf = 0;
+		if (inf > 255)
+			inf = 255;
+
+		pal[i] = inf;
+	}
+}
+
+
 /*
 =================
 TexMgr_LoadPalette -- johnfitz -- was VID_SetPalette, moved here, renamed, rewritten
@@ -431,6 +456,8 @@ void TexMgr_LoadPalette (void)
 	pal = Hunk_Alloc (768);
 	fread (pal, 1, 768, f);
 	fclose(f);
+
+	Check_Gamma (pal);
 
 	//standard palette, 255 is transparent
 	dst = (byte *)d_8to24table;
