@@ -413,6 +413,31 @@ static void R_SetMD5BaseTexture (entity_t *e, skinpair_t *image)
 
 /*
 ==================
+R_InterpolateMD5Model
+
+==================
+*/
+void R_InterpolateMD5Model (md5header_t *hdr, lerpdata_t *lerpdata)
+{
+	// optimize the non-interpolated case
+	if (lerpdata->pose1 != lerpdata->pose2)
+	{
+		// run the skeletal animation
+		MD5_InterpolateSkeletons (hdr->md5anim.skelFrames[lerpdata->pose1], hdr->md5anim.skelFrames[lerpdata->pose2], hdr->md5anim.num_joints, lerpdata->blend, hdr->skeleton);
+
+		// set up the vertex array
+		MD5_PrepareMesh (&hdr->md5mesh.meshes[0], hdr->skeleton, r_md5vertexes, hdr->vnorms);
+	}
+	else
+	{
+		// set up the vertex array
+		MD5_PrepareMesh (&hdr->md5mesh.meshes[0], hdr->md5anim.skelFrames[lerpdata->pose1], r_md5vertexes, hdr->vnorms);
+	}
+}
+
+
+/*
+==================
 R_DrawMD5Model
 
 ==================
@@ -452,20 +477,8 @@ void R_DrawMD5Model (entity_t *e)
 	// base texture
 	R_SetMD5BaseTexture (e, image);
 
-	// optimize the non-interpolated case
-	if (lerpdata.pose1 != lerpdata.pose2)
-	{
-		// run the skeletal animation
-		MD5_InterpolateSkeletons (hdr->md5anim.skelFrames[lerpdata.pose1], hdr->md5anim.skelFrames[lerpdata.pose2], hdr->md5anim.num_joints, lerpdata.blend, hdr->skeleton);
-
-		// set up the vertex array
-		MD5_PrepareMesh (&hdr->md5mesh.meshes[0], hdr->skeleton, r_md5vertexes, hdr->vnorms);
-	}
-	else
-	{
-		// set up the vertex array
-		MD5_PrepareMesh (&hdr->md5mesh.meshes[0], hdr->md5anim.skelFrames[lerpdata.pose1], r_md5vertexes, hdr->vnorms);
-	}
+	// set up the MD5 interpolation and frame
+	R_InterpolateMD5Model (hdr, &lerpdata);
 
 	// set up arrays
 	glEnableClientState (GL_VERTEX_ARRAY);
@@ -674,20 +687,8 @@ void GL_DrawMD5Shadow (entity_t *e)
 	glRotatef (-lerpdata.angles[0], 0, 1, 0);
 	glRotatef (lerpdata.angles[2], 1, 0, 0);
 
-	// optimize the non-interpolated case
-	if (lerpdata.pose1 != lerpdata.pose2)
-	{
-		// run the skeletal animation
-		MD5_InterpolateSkeletons (hdr->md5anim.skelFrames[lerpdata.pose1], hdr->md5anim.skelFrames[lerpdata.pose2], hdr->md5anim.num_joints, lerpdata.blend, hdr->skeleton);
-
-		// set up the vertex array
-		MD5_PrepareMesh (&hdr->md5mesh.meshes[0], hdr->skeleton, r_md5vertexes, hdr->vnorms);
-	}
-	else
-	{
-		// set up the vertex array
-		MD5_PrepareMesh (&hdr->md5mesh.meshes[0], hdr->md5anim.skelFrames[lerpdata.pose1], r_md5vertexes, hdr->vnorms);
-	}
+	// set up the MD5 interpolation and frame
+	R_InterpolateMD5Model (hdr, &lerpdata);
 
 	// set up array and pointer
 	glEnableClientState (GL_VERTEX_ARRAY);
@@ -734,20 +735,8 @@ void R_DrawMD5Model_ShowTris (entity_t *e)
     glPushMatrix ();
 	R_RotateForEntity (lerpdata.origin, lerpdata.angles);
 
-	// optimize the non-interpolated case
-	if (lerpdata.pose1 != lerpdata.pose2)
-	{
-		// run the skeletal animation
-		MD5_InterpolateSkeletons (hdr->md5anim.skelFrames[lerpdata.pose1], hdr->md5anim.skelFrames[lerpdata.pose2], hdr->md5anim.num_joints, lerpdata.blend, hdr->skeleton);
-
-		// set up the vertex array
-		MD5_PrepareMesh (&hdr->md5mesh.meshes[0], hdr->skeleton, r_md5vertexes, hdr->vnorms);
-	}
-	else
-	{
-		// set up the vertex array
-		MD5_PrepareMesh (&hdr->md5mesh.meshes[0], hdr->md5anim.skelFrames[lerpdata.pose1], r_md5vertexes, hdr->vnorms);
-	}
+	// set up the MD5 interpolation and frame
+	R_InterpolateMD5Model (hdr, &lerpdata);
 
 	// set up array and pointer
 	glEnableClientState (GL_VERTEX_ARRAY);
