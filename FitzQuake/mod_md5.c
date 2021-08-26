@@ -443,18 +443,24 @@ static void MD5_LoadSkins (md5header_t *hdr, char *shader)
 			// skins are in .lmp format; byte-swap the header (lmp skins are already flood-filled)
 			SwapPic (skin);
 
-			// and load the skin
+			// copy off the skin texels for colormapping
+			image->source = (qpic_t *) Hunk_Alloc (skin->width * skin->height + sizeof (qpic_t) - 4);
+			memcpy (image->source, skin, skin->width * skin->height + sizeof (qpic_t) - 4);
+
+			// and load the skin 
+			// !!!!! the source_offset param to TexMgr_LoadImage should be 8, not 0, because it needs to point to the data only !!!!!
+			// !!!!! this also ensures that the skin works correctly when reloading for colormapping !!!!!
 			if (Mod_CheckFullbrights (skin->data, skin->width * skin->height))
 			{
 				char fbr_mask_name[256];
 				sprintf (fbr_mask_name, "%s_glow", skinname);
 
-				image[numskins].tx = TexMgr_LoadImage (loadmodel, skinname, skin->width, skin->height, SRC_INDEXED, skin->data, skinname, 0, TEXPREF_MIPMAP | TEXPREF_PAD | TEXPREF_NOBRIGHT);
-				image[numskins].fb = TexMgr_LoadImage (loadmodel, fbr_mask_name, skin->width, skin->height, SRC_INDEXED, skin->data, skinname, 0, TEXPREF_MIPMAP | TEXPREF_PAD | TEXPREF_FULLBRIGHT);
+				image[numskins].tx = TexMgr_LoadImage (loadmodel, skinname, skin->width, skin->height, SRC_INDEXED, skin->data, skinname, 8, TEXPREF_MIPMAP | TEXPREF_PAD | TEXPREF_NOBRIGHT);
+				image[numskins].fb = TexMgr_LoadImage (loadmodel, fbr_mask_name, skin->width, skin->height, SRC_INDEXED, skin->data, skinname, 8, TEXPREF_MIPMAP | TEXPREF_PAD | TEXPREF_FULLBRIGHT);
 			}
 			else
 			{
-				image[numskins].tx = TexMgr_LoadImage (loadmodel, skinname, skin->width, skin->height, SRC_INDEXED, skin->data, skinname, 0, TEXPREF_MIPMAP | TEXPREF_PAD);
+				image[numskins].tx = TexMgr_LoadImage (loadmodel, skinname, skin->width, skin->height, SRC_INDEXED, skin->data, skinname, 8, TEXPREF_MIPMAP | TEXPREF_PAD);
 				image[numskins].fb = NULL;
 			}
 

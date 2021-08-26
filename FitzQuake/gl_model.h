@@ -386,6 +386,9 @@ typedef struct vertexnormals_s
 typedef struct skinpair_s {
 	struct gltexture_s *tx;
 	struct gltexture_s *fb;
+
+	// .lmp source for colormapping
+	qpic_t *source;
 } skinpair_t;
 
 typedef struct md5skin_s {

@@ -31,6 +31,9 @@ extern vec3_t	shadevector;
 extern float	entalpha; //johnfitz
 extern vec3_t	lightspot;
 
+extern gltexture_t *playertextures[MAX_SCOREBOARD];
+
+
 // alias/md5 shared functions
 void R_SetupEntityTransform (entity_t *e, lerpdata_t *lerpdata);
 void R_SetupAliasLighting (entity_t	*e);
@@ -389,6 +392,31 @@ static qboolean R_CullMD5Model (lerpdata_t lerpdata, const struct md5_anim_t *an
 
 /*
 ==================
+R_SetMD5BaseTexture
+
+==================
+*/
+static void R_SetMD5BaseTexture (entity_t *e, skinpair_t *image)
+{
+	GL_DisableMultitexture ();
+
+	if (e->colormap != vid.colormap && !gl_nocolors.value)
+	{
+		int i = e - cl_entities;
+
+		if (i >= 1 && i <= cl.maxclients /* && !strcmp (currententity->model->name, "progs/player.mdl") */)
+		{
+		    GL_Bind (playertextures[i - 1]);
+			return;
+		}
+	}
+
+	GL_Bind (image->tx);
+}
+
+
+/*
+==================
 R_DrawMD5Model
 
 ==================
@@ -425,13 +453,8 @@ void R_DrawMD5Model (entity_t *e)
 	shadevector[2] = 1;
 	VectorNormalize (shadevector);
 
-	// base textures
-	// i didn't bother doing player texture translation for simplicity and clarity, but the process will be the same as for MDLs:
-	// - save the texels out at load time
-	// - retrieve the saved texels
-	// - translate them and re-upload
-	GL_DisableMultitexture ();
-	GL_Bind (image->tx);
+	// base texture
+	R_SetMD5BaseTexture (e, image);
 
 	// optimize the non-interpolated case
 	if (lerpdata.pose1 != lerpdata.pose2)

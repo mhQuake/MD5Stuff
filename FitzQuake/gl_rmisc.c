@@ -288,34 +288,60 @@ void R_TranslateNewPlayerSkin (int playernum)
 {
 	char		name[64];
 	byte		*pixels;
-	aliashdr_t	*paliashdr;
-	int		skinnum;
+	int			width;
+	int			height;
+	char		*source_file;
+	unsigned	source_offset;
 
-//get correct texture pixels
-	currententity = &cl_entities[1+playernum];
+	// get correct texture pixels
+	currententity = &cl_entities[1 + playernum];
 
-	if (!currententity->model || currententity->model->type != mod_alias)
+	if (!currententity->model)
 		return;
 
-	paliashdr = (aliashdr_t *)Mod_Extradata (currententity->model);
-
-	skinnum = currententity->skinnum;
-
-	//TODO: move these tests to the place where skinnum gets received from the server
-	if (skinnum < 0 || skinnum >= paliashdr->numskins)
+	if (currententity->model->type == mod_alias)
 	{
-		Con_DPrintf("(%d): Invalid player skin #%d\n", playernum, skinnum);
-		skinnum = 0;
+		aliashdr_t *paliashdr = (aliashdr_t *) Mod_Extradata (currententity->model);
+		int skinnum = currententity->skinnum;
+
+		// TODO: move these tests to the place where skinnum gets received from the server
+		if (skinnum < 0 || skinnum >= paliashdr->numskins)
+		{
+			Con_DPrintf ("(%d): Invalid player skin #%d\n", playernum, skinnum);
+			skinnum = 0;
+		}
+
+		pixels = (byte *) paliashdr + paliashdr->texels[skinnum]; // This is not a persistent place!
+		width = paliashdr->skinwidth;
+		height = paliashdr->skinheight;
+		source_file = paliashdr->gltextures[skinnum][0]->source_file;
+		source_offset = paliashdr->gltextures[skinnum][0]->source_offset;
 	}
+	else if (currententity->model->type == mod_md5)
+	{
+		md5header_t *hdr = (md5header_t *) currententity->model->cache.data;
+		int skinnum = currententity->skinnum;
 
-	pixels = (byte *)paliashdr + paliashdr->texels[skinnum]; // This is not a persistent place!
+		// TODO: move these tests to the place where skinnum gets received from the server
+		if (skinnum < 0 || skinnum >= hdr->numskins)
+		{
+			Con_DPrintf ("(%d): Invalid player skin #%d\n", playernum, skinnum);
+			skinnum = 0;
+		}
 
-//upload new image
-	sprintf(name, "player_%i", playernum);
-	playertextures[playernum] = TexMgr_LoadImage (currententity->model, name, paliashdr->skinwidth, paliashdr->skinheight,
-		SRC_INDEXED, pixels, paliashdr->gltextures[skinnum][0]->source_file, paliashdr->gltextures[skinnum][0]->source_offset, TEXPREF_PAD | TEXPREF_OVERWRITE);
+		pixels = hdr->skins[skinnum].image[0].source->data;
+		width = hdr->skins[skinnum].image[0].source->width;
+		height = hdr->skins[skinnum].image[0].source->height;
+		source_file = hdr->skins[skinnum].image[0].tx->source_file;
+		source_offset = hdr->skins[skinnum].image[0].tx->source_offset;
+	}
+	else return;
 
-//now recolor it
+	// upload new image
+	sprintf (name, "player_%i", playernum);
+	playertextures[playernum] = TexMgr_LoadImage (currententity->model, name, width, height, SRC_INDEXED, pixels, source_file, source_offset, TEXPREF_PAD | TEXPREF_OVERWRITE);
+
+	// now recolor it
 	R_TranslatePlayerSkin (playernum);
 }
 
