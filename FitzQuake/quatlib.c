@@ -93,6 +93,20 @@ void Quat_rotatePoint (const quat4_t q, const vec3_t in, vec3_t out)
 }
 
 
+void Quat_inverseRotatePoint (const quat4_t q, const vec3_t in, vec3_t out)
+{
+	quat4_t tmp, inv, final;
+
+	Quat_inverse (q, inv);
+	Quat_multVec (inv, in, tmp);
+	Quat_multQuat (tmp, q, final);
+
+	out[X] = final[X];
+	out[Y] = final[Y];
+	out[Z] = final[Z];
+}
+
+
 /*
 ==================
 Quat_dotProduct

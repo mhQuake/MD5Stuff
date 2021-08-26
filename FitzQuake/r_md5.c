@@ -340,13 +340,9 @@ void MD5_BuildBaseNormals (md5header_t *hdr, struct md5_mesh_t *mesh)
 			const struct md5_weight_t *weight = &mesh->weights[mesh->vertices[i].start + j];
 			const struct md5_joint_t *joint = &skeleton[weight->joint];
 
-			// Calculate transformed normal for this weight
+			// Calculate transformed normal for this weight - inverse rotate it back to joint-local space
 			vec3_t wv;
-			quat4_t inverseOrient;
-
-			// inverse rotate it back to joint-local space
-			Quat_inverse (joint->orient, inverseOrient);
-			Quat_rotatePoint (inverseOrient, vnorms[i].normal, wv);
+			Quat_inverseRotatePoint (joint->orient, vnorms[i].normal, wv);
 
 			// The sum of all weight->bias should be 1.0
 			finalNormal[0] += wv[0] * weight->bias;

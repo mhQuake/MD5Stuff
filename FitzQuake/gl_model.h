@@ -279,6 +279,7 @@ void Quat_multQuat (const quat4_t qa, const quat4_t qb, quat4_t out);
 void Quat_multVec (const quat4_t q, const vec3_t v, quat4_t out);
 void Quat_inverse (const quat4_t q, quat4_t inv);
 void Quat_rotatePoint (const quat4_t q, const vec3_t in, vec3_t out);
+void Quat_inverseRotatePoint (const quat4_t q, const vec3_t in, vec3_t out);
 float Quat_dotProduct (const quat4_t qa, const quat4_t qb);
 void Quat_slerp (const quat4_t qa, const quat4_t qb, float t, quat4_t out);
 
