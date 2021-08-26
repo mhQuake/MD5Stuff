@@ -478,6 +478,7 @@ void R_DrawMD5Model (entity_t *e)
 		glShadeModel (GL_FLAT);
 		GL_DrawMD5Frame (&hdr->md5mesh.meshes[0]);
 		glEnable (GL_TEXTURE_2D);
+		srand ((int) (cl.time * 1000)); //restore randomness
 	}
 	else if (r_fullbright_cheatsafe)
 	{
