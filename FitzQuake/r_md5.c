@@ -433,11 +433,20 @@ void R_DrawMD5Model (entity_t *e)
 	GL_DisableMultitexture ();
 	GL_Bind (image->tx);
 
-	// run the skeletal animation
-	MD5_InterpolateSkeletons (hdr->md5anim.skelFrames[lerpdata.pose1], hdr->md5anim.skelFrames[lerpdata.pose2], hdr->md5anim.num_joints, lerpdata.blend, hdr->skeleton);
+	// optimize the non-interpolated case
+	if (lerpdata.pose1 != lerpdata.pose2)
+	{
+		// run the skeletal animation
+		MD5_InterpolateSkeletons (hdr->md5anim.skelFrames[lerpdata.pose1], hdr->md5anim.skelFrames[lerpdata.pose2], hdr->md5anim.num_joints, lerpdata.blend, hdr->skeleton);
 
-	// set up the vertex array
-	MD5_PrepareMesh (&hdr->md5mesh.meshes[0], hdr->skeleton, r_md5vertexes, hdr->vnorms);
+		// set up the vertex array
+		MD5_PrepareMesh (&hdr->md5mesh.meshes[0], hdr->skeleton, r_md5vertexes, hdr->vnorms);
+	}
+	else
+	{
+		// set up the vertex array
+		MD5_PrepareMesh (&hdr->md5mesh.meshes[0], hdr->md5anim.skelFrames[lerpdata.pose1], r_md5vertexes, hdr->vnorms);
+	}
 
 	// set up arrays
 	glEnableClientState (GL_VERTEX_ARRAY);
@@ -646,11 +655,20 @@ void GL_DrawMD5Shadow (entity_t *e)
 	glRotatef (-lerpdata.angles[0], 0, 1, 0);
 	glRotatef (lerpdata.angles[2], 1, 0, 0);
 
-	// run the skeletal animation
-	MD5_InterpolateSkeletons (hdr->md5anim.skelFrames[lerpdata.pose1], hdr->md5anim.skelFrames[lerpdata.pose2], hdr->md5anim.num_joints, lerpdata.blend, hdr->skeleton);
+	// optimize the non-interpolated case
+	if (lerpdata.pose1 != lerpdata.pose2)
+	{
+		// run the skeletal animation
+		MD5_InterpolateSkeletons (hdr->md5anim.skelFrames[lerpdata.pose1], hdr->md5anim.skelFrames[lerpdata.pose2], hdr->md5anim.num_joints, lerpdata.blend, hdr->skeleton);
 
-	// set up the vertex array (this does extra setup that's not needed for shadows, but this was never a robust codepath anyway)
-	MD5_PrepareMesh (&hdr->md5mesh.meshes[0], hdr->skeleton, r_md5vertexes, hdr->vnorms);
+		// set up the vertex array
+		MD5_PrepareMesh (&hdr->md5mesh.meshes[0], hdr->skeleton, r_md5vertexes, hdr->vnorms);
+	}
+	else
+	{
+		// set up the vertex array
+		MD5_PrepareMesh (&hdr->md5mesh.meshes[0], hdr->md5anim.skelFrames[lerpdata.pose1], r_md5vertexes, hdr->vnorms);
+	}
 
 	// set up array and pointer
 	glEnableClientState (GL_VERTEX_ARRAY);
@@ -697,8 +715,20 @@ void R_DrawMD5Model_ShowTris (entity_t *e)
     glPushMatrix ();
 	R_RotateForEntity (lerpdata.origin, lerpdata.angles);
 
-	// run the skeletal animation
-	MD5_InterpolateSkeletons (hdr->md5anim.skelFrames[lerpdata.pose1], hdr->md5anim.skelFrames[lerpdata.pose2], hdr->md5anim.num_joints, lerpdata.blend, hdr->skeleton);
+	// optimize the non-interpolated case
+	if (lerpdata.pose1 != lerpdata.pose2)
+	{
+		// run the skeletal animation
+		MD5_InterpolateSkeletons (hdr->md5anim.skelFrames[lerpdata.pose1], hdr->md5anim.skelFrames[lerpdata.pose2], hdr->md5anim.num_joints, lerpdata.blend, hdr->skeleton);
+
+		// set up the vertex array
+		MD5_PrepareMesh (&hdr->md5mesh.meshes[0], hdr->skeleton, r_md5vertexes, hdr->vnorms);
+	}
+	else
+	{
+		// set up the vertex array
+		MD5_PrepareMesh (&hdr->md5mesh.meshes[0], hdr->md5anim.skelFrames[lerpdata.pose1], r_md5vertexes, hdr->vnorms);
+	}
 
 	// set up the vertex array (this does extra setup that's not needed for showtris, but this was never a high-performance codepath anyway)
 	MD5_PrepareMesh (&hdr->md5mesh.meshes[0], hdr->skeleton, r_md5vertexes, hdr->vnorms);
