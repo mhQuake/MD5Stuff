@@ -730,9 +730,6 @@ void R_DrawMD5Model_ShowTris (entity_t *e)
 		MD5_PrepareMesh (&hdr->md5mesh.meshes[0], hdr->md5anim.skelFrames[lerpdata.pose1], r_md5vertexes, hdr->vnorms);
 	}
 
-	// set up the vertex array (this does extra setup that's not needed for showtris, but this was never a high-performance codepath anyway)
-	MD5_PrepareMesh (&hdr->md5mesh.meshes[0], hdr->skeleton, r_md5vertexes, hdr->vnorms);
-
 	// set up array and pointer
 	glEnableClientState (GL_VERTEX_ARRAY);
 	glVertexPointer (3, GL_FLOAT, sizeof (md5polyvert_t), r_md5vertexes->position);
