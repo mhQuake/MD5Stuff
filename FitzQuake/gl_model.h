@@ -277,6 +277,7 @@ void Quat_computeW (quat4_t q);
 void Quat_normalize (quat4_t q);
 void Quat_multQuat (const quat4_t qa, const quat4_t qb, quat4_t out);
 void Quat_multVec (const quat4_t q, const vec3_t v, quat4_t out);
+void Quat_inverse (const quat4_t q, quat4_t inv);
 void Quat_rotatePoint (const quat4_t q, const vec3_t in, vec3_t out);
 float Quat_dotProduct (const quat4_t qa, const quat4_t qb);
 void Quat_slerp (const quat4_t qa, const quat4_t qb, float t, quat4_t out);
@@ -304,7 +305,7 @@ struct md5_vertex_t
 // Triangle
 struct md5_triangle_t
 {
-	int index[3];
+	unsigned short index[3];
 };
 
 // Weight
@@ -382,13 +383,6 @@ typedef struct vertexnormals_s
 	float normal[3];
 } vertexnormals_t;
 
-typedef struct md5polyvert_s
-{
-	float position[3];
-	float colour[4];
-	float texcoord[2];
-} md5polyvert_t;
-
 typedef struct skinpair_s {
 	struct gltexture_s *tx;
 	struct gltexture_s *fb;
@@ -403,12 +397,6 @@ typedef struct md5header_s
 {
 	struct md5_model_t md5mesh;
 	struct md5_anim_t md5anim;
-
-	md5polyvert_t *vertexes;
-	int numvertexes;
-
-	unsigned short *indexes;
-	int numindexes;
 
 	vertexnormals_t *vnorms;
 	struct md5_joint_t *skeleton;

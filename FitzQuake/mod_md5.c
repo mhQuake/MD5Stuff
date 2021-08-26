@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 extern model_t *loadmodel;
 qboolean Mod_CheckFullbrights (byte *pixels, int count);
+void MD5_BuildBaseNormals (md5header_t *hdr, struct md5_mesh_t *mesh);
 
 
 /*
@@ -402,63 +403,6 @@ static int MD5_ReadAnimFile (char *filename, struct md5_anim_t *anim)
 }
 
 
-void MD5_BuildVertexArray (md5header_t *hdr, struct md5_mesh_t *mesh)
-{
-	// set up the vertexes buffer in system memory
-	md5polyvert_t *vertexes = (md5polyvert_t *) Hunk_Alloc (mesh->num_verts * sizeof (md5polyvert_t));
-
-	int i;
-
-	hdr->vertexes = vertexes;
-	hdr->numvertexes = mesh->num_verts;
-
-	// setup texcoords (other vertex elements are set at draw time)
-	for (i = 0; i < mesh->num_verts; i++)
-	{
-		vertexes[i].texcoord[0] = mesh->vertices[i].st[0];
-		vertexes[i].texcoord[1] = mesh->vertices[i].st[1];
-	}
-}
-
-
-void MD5_BuildIndexArray (md5header_t *hdr, struct md5_mesh_t *mesh)
-{
-	// set up the index buffer in system memory
-	unsigned short *indexes = (unsigned short *) Hunk_Alloc (mesh->num_tris * 3 * sizeof (unsigned short));
-
-	int i;
-
-	hdr->indexes = indexes;
-	hdr->numindexes = mesh->num_tris * 3;
-
-	// setup indexes
-	for (i = 0; i < mesh->num_tris; i++, indexes += 3)
-	{
-		indexes[0] = mesh->triangles[i].index[0];
-		indexes[1] = mesh->triangles[i].index[1];
-		indexes[2] = mesh->triangles[i].index[2];
-	}
-}
-
-
-static void MD5_LoadSingleSkin (char *name, skinpair_t *out, qpic_t *in)
-{
-	if (Mod_CheckFullbrights (in->data, in->width * in->height))
-	{
-		char fbr_mask_name[256];
-		sprintf (fbr_mask_name, "%s_glow", name);
-
-		out->tx = TexMgr_LoadImage (loadmodel, name, in->width, in->height, SRC_INDEXED, in->data, name, 0, TEXPREF_MIPMAP | TEXPREF_PAD | TEXPREF_NOBRIGHT);
-		out->fb = TexMgr_LoadImage (loadmodel, fbr_mask_name, in->width, in->height, SRC_INDEXED, in->data, name, 0, TEXPREF_MIPMAP | TEXPREF_PAD | TEXPREF_FULLBRIGHT);
-	}
-	else
-	{
-		out->tx = TexMgr_LoadImage (loadmodel, name, in->width, in->height, SRC_INDEXED, in->data, name, 0, TEXPREF_MIPMAP | TEXPREF_PAD);
-		out->fb = NULL;
-	}
-}
-
-
 /*
 ==================
 MD5_LoadSkins
@@ -499,8 +443,20 @@ static void MD5_LoadSkins (md5header_t *hdr, char *shader)
 			// skins are in .lmp format; byte-swap the header (lmp skins are already flood-filled)
 			SwapPic (skin);
 
-			// and load and return the skin
-			MD5_LoadSingleSkin (skinname, &image[numskins], skin);
+			// and load the skin
+			if (Mod_CheckFullbrights (skin->data, skin->width * skin->height))
+			{
+				char fbr_mask_name[256];
+				sprintf (fbr_mask_name, "%s_glow", skinname);
+
+				image[numskins].tx = TexMgr_LoadImage (loadmodel, skinname, skin->width, skin->height, SRC_INDEXED, skin->data, skinname, 0, TEXPREF_MIPMAP | TEXPREF_PAD | TEXPREF_NOBRIGHT);
+				image[numskins].fb = TexMgr_LoadImage (loadmodel, fbr_mask_name, skin->width, skin->height, SRC_INDEXED, skin->data, skinname, 0, TEXPREF_MIPMAP | TEXPREF_PAD | TEXPREF_FULLBRIGHT);
+			}
+			else
+			{
+				image[numskins].tx = TexMgr_LoadImage (loadmodel, skinname, skin->width, skin->height, SRC_INDEXED, skin->data, skinname, 0, TEXPREF_MIPMAP | TEXPREF_PAD);
+				image[numskins].fb = NULL;
+			}
 
 			// go to the next skin
 			numskins++;
@@ -578,15 +534,11 @@ qboolean Mod_LoadMD5Model (model_t *mod, void *buffer)
 	// the MD5 spec allows for more than 1 mesh but we don't need to support it for Quake21 content
 	if (hdr->md5mesh.num_meshes > 1) goto md5_bad;
 
-	// build the vertex array structs
-	MD5_BuildVertexArray (hdr, &hdr->md5mesh.meshes[0]);
-	MD5_BuildIndexArray (hdr, &hdr->md5mesh.meshes[0]);
-
 	// allocate memory for the animated skeleton
 	hdr->skeleton = (struct md5_joint_t *) Hunk_Alloc (sizeof (struct md5_joint_t) * hdr->md5anim.num_joints);
 
-	// allocate memory for normals
-	hdr->vnorms = (vertexnormals_t *) Hunk_Alloc (sizeof (vertexnormals_t) * hdr->numvertexes);
+	// build the baseframe normals
+	MD5_BuildBaseNormals (hdr, &hdr->md5mesh.meshes[0]);
 
 	// load textures from .lmp files
 	MD5_LoadSkins (hdr, hdr->md5mesh.meshes[0].shader);

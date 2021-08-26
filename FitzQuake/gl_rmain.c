@@ -665,6 +665,7 @@ void R_ShowTris (void)
 			switch (currententity->model->type)
 			{
 			case mod_md5:
+				R_DrawMD5Model_ShowTris (currententity);
 				break;
 			case mod_brush:
 				R_DrawBrushModel_ShowTris (currententity);
@@ -695,7 +696,7 @@ void R_ShowTris (void)
 			if (currententity->model->type == mod_alias)
 				R_DrawAliasModel_ShowTris (currententity);
 			else if (currententity->model->type == mod_md5)
-				;
+				R_DrawMD5Model_ShowTris (currententity);
 
 			glDepthRange (0, 1);
 		}
@@ -734,13 +735,15 @@ void R_DrawShadows (void)
 	{
 		currententity = cl_visedicts[i];
 
-		if (currententity->model->type != mod_alias)
+		// mh - this was a "return" which would cause shadows to be skipped over, depending where the viewent was in the entities list
+		if (currententity == &cl.viewent)
 			continue;
 
-		if (currententity == &cl.viewent)
-			return;
-
-		GL_DrawAliasShadow (currententity);
+		// call the correct drawer
+		if (currententity->model->type == mod_alias)
+			GL_DrawAliasShadow (currententity);
+		else if (currententity->model->type == mod_md5)
+			GL_DrawMD5Shadow (currententity);
 	}
 }
 

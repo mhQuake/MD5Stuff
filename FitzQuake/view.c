@@ -31,6 +31,15 @@ when crossing a water boudnary.
 
 */
 
+/*
+==================================================================================================
+
+mh - a bunch of changes from "host_frametime" to "(cl.time - cl.oldtime)" here; these are actually the correct times to use and otherwise
+damage and pickup screen flashes will dominate timedemos, meaning that i can't properly benchmark the performance of my MD5 stuff
+
+==================================================================================================
+*/
+
 cvar_t	scr_ofsx = {"scr_ofsx","0", false};
 cvar_t	scr_ofsy = {"scr_ofsy","0", false};
 cvar_t	scr_ofsz = {"scr_ofsz","0", false};
@@ -494,12 +503,12 @@ void V_UpdateBlend (void)
 	}
 
 // drop the damage value
-	cl.cshifts[CSHIFT_DAMAGE].percent -= host_frametime*150;
+	cl.cshifts[CSHIFT_DAMAGE].percent -= (cl.time - cl.oldtime)*150; // mh - was host_frametime
 	if (cl.cshifts[CSHIFT_DAMAGE].percent <= 0)
 		cl.cshifts[CSHIFT_DAMAGE].percent = 0;
 
 // drop the bonus value
-	cl.cshifts[CSHIFT_BONUS].percent -= host_frametime*100;
+	cl.cshifts[CSHIFT_BONUS].percent -= (cl.time - cl.oldtime)*100; // mh - was host_frametime
 	if (cl.cshifts[CSHIFT_BONUS].percent <= 0)
 		cl.cshifts[CSHIFT_BONUS].percent = 0;
 
@@ -585,7 +594,7 @@ void CalcGunAngle (void)
 		pitch = 10;
 	if (pitch < -10)
 		pitch = -10;
-	move = host_frametime*20;
+	move = (cl.time - cl.oldtime)*20; // mh - was host_frametime
 	if (yaw > oldyaw)
 	{
 		if (oldyaw + move < yaw)
@@ -680,7 +689,7 @@ void V_CalcViewRoll (void)
 	{
 		r_refdef.viewangles[ROLL] += v_dmg_time/v_kicktime.value*v_dmg_roll;
 		r_refdef.viewangles[PITCH] += v_dmg_time/v_kicktime.value*v_dmg_pitch;
-		v_dmg_time -= host_frametime;
+		v_dmg_time -= (cl.time - cl.oldtime); // mh - was host_frametime
 	}
 
 	if (cl.stats[STAT_HEALTH] <= 0)
@@ -804,7 +813,7 @@ void V_CalcRefdef (void)
 			if (punch[i] != v_punchangles[0][i])
 			{
 				//speed determined by how far we need to lerp in 1/10th of a second
-				delta = (v_punchangles[0][i]-v_punchangles[1][i]) * host_frametime * 10;
+				delta = (v_punchangles[0][i]-v_punchangles[1][i]) * (cl.time - cl.oldtime) * 10; // mh - was host_frametime
 
 				if (delta > 0)
 					punch[i] = min(punch[i]+delta, v_punchangles[0][i]);
