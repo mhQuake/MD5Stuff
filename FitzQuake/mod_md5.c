@@ -405,6 +405,76 @@ static int MD5_ReadAnimFile (char *filename, struct md5_anim_t *anim)
 
 /*
 ==================
+MD5_CullboxForFrame
+
+==================
+*/
+static void MD5_CullboxForFrame (const struct md5_mesh_t *mesh, const struct md5_joint_t *skeleton, struct md5_bbox_t *cullbox)
+{
+	int i, j;
+
+	// init this cullbox
+	cullbox->min[0] = cullbox->min[1] = cullbox->min[2] = 999999;
+	cullbox->max[0] = cullbox->max[1] = cullbox->max[2] = -999999;
+
+	// Setup vertices
+	for (i = 0; i < mesh->num_verts; i++)
+	{
+		vec3_t finalVertex = {0.0f, 0.0f, 0.0f};
+
+		// Calculate final vertex to draw with weights
+		for (j = 0; j < mesh->vertices[i].count; j++)
+		{
+			const struct md5_weight_t *weight = &mesh->weights[mesh->vertices[i].start + j];
+			const struct md5_joint_t *joint = &skeleton[weight->joint];
+
+			// Calculate transformed vertex for this weight
+			vec3_t wv;
+			Quat_rotatePoint (joint->orient, weight->pos, wv);
+
+			// The sum of all weight->bias should be 1.0
+			finalVertex[0] += (joint->pos[0] + wv[0]) * weight->bias;
+			finalVertex[1] += (joint->pos[1] + wv[1]) * weight->bias;
+			finalVertex[2] += (joint->pos[2] + wv[2]) * weight->bias;
+		}
+
+		// accumulate to the cullbox
+		for (j = 0; j < 3; j++)
+		{
+			if (finalVertex[j] < cullbox->min[j]) cullbox->min[j] = finalVertex[j];
+			if (finalVertex[j] > cullbox->max[j]) cullbox->max[j] = finalVertex[j];
+		}
+	}
+
+	// spread the mins and maxs by 0.5 to ensure we never have zero in any dimension
+	for (j = 0; j < 3; j++)
+	{
+		cullbox->min[j] -= 0.5f;
+		cullbox->max[j] += 0.5f;
+	}
+}
+
+
+/*
+==================
+MD5_MakeCullboxes
+
+==================
+*/
+static void MD5_MakeCullboxes (md5header_t *hdr, struct md5_mesh_t *mesh, struct md5_anim_t *anim)
+{
+	int f;
+
+	for (f = 0; f < anim->num_frames; f++)
+	{
+		// calc the cullbox for this frame
+		MD5_CullboxForFrame (mesh, anim->skelFrames[f], &anim->bboxes[f]);
+	}
+}
+
+
+/*
+==================
 MD5_LoadSkins
 
 ==================
@@ -542,6 +612,10 @@ qboolean Mod_LoadMD5Model (model_t *mod, void *buffer)
 
 	// don't load MD5s that are too big
 	if (hdr->md5mesh.meshes[0].num_verts > MAX_MD5_VERTEXES) goto md5_bad;
+
+	// load the cullboxes
+	// some of the source MD5s were exported with bad cullboxes, so we must regenerate them correctly
+	MD5_MakeCullboxes (hdr, hdr->md5mesh.meshes, &hdr->md5anim);
 
 	// allocate memory for the animated skeleton
 	hdr->skeleton = (struct md5_joint_t *) Hunk_Alloc (sizeof (struct md5_joint_t) * hdr->md5anim.num_joints);
