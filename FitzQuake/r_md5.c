@@ -419,19 +419,29 @@ R_InterpolateMD5Model
 */
 void R_InterpolateMD5Model (md5header_t *hdr, lerpdata_t *lerpdata)
 {
-	// optimize the non-interpolated case
-	if (lerpdata->pose1 != lerpdata->pose2)
+	// optimize the non-interpolated cases
+	if (lerpdata->pose1 == lerpdata->pose2)
 	{
-		// run the skeletal animation
-		MD5_InterpolateSkeletons (hdr->md5anim.skelFrames[lerpdata->pose1], hdr->md5anim.skelFrames[lerpdata->pose2], hdr->md5anim.num_joints, lerpdata->blend, hdr->skeleton);
-
-		// set up the vertex array
-		MD5_PrepareMesh (&hdr->md5mesh.meshes[0], hdr->skeleton, r_md5vertexes, hdr->vnorms);
+		// case #1 - not lerping, just animate from a single skeleton
+		MD5_PrepareMesh (&hdr->md5mesh.meshes[0], hdr->md5anim.skelFrames[lerpdata->pose1], r_md5vertexes, hdr->vnorms);
+	}
+	else if (!(lerpdata->blend > 0))
+	{
+		// case #2 : lerpblend is 0 so just animate from one frame
+		MD5_PrepareMesh (&hdr->md5mesh.meshes[0], hdr->md5anim.skelFrames[lerpdata->pose1], r_md5vertexes, hdr->vnorms);
+	}
+	else if (!(lerpdata->blend < 1))
+	{
+		// case #3 : lerpblend is 1 so just animate from one frame
+		MD5_PrepareMesh (&hdr->md5mesh.meshes[0], hdr->md5anim.skelFrames[lerpdata->pose2], r_md5vertexes, hdr->vnorms);
 	}
 	else
 	{
-		// set up the vertex array
-		MD5_PrepareMesh (&hdr->md5mesh.meshes[0], hdr->md5anim.skelFrames[lerpdata->pose1], r_md5vertexes, hdr->vnorms);
+		// case #4 : full interpolation - run the skeletal animation
+		MD5_InterpolateSkeletons (hdr->md5anim.skelFrames[lerpdata->pose1], hdr->md5anim.skelFrames[lerpdata->pose2], hdr->md5anim.num_joints, lerpdata->blend, hdr->skeleton);
+
+		// and set up the vertex array
+		MD5_PrepareMesh (&hdr->md5mesh.meshes[0], hdr->skeleton, r_md5vertexes, hdr->vnorms);
 	}
 }
 
