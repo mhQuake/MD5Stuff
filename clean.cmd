@@ -16,6 +16,11 @@ cd FitzQuake
 rmdir Debug /s /q
 rmdir Release /s /q
 
+cd ..\SoftwareQuake
+
+rmdir Debug /s /q
+rmdir Release /s /q
+
 cd ..
 
 echo done

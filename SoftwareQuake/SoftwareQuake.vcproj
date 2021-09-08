@@ -2,8 +2,8 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="FitzQuake"
-	ProjectGUID="{D658EBB2-EEBD-404B-84FD-543B6D194C6A}"
+	Name="SoftwareQuake"
+	ProjectGUID="{A5B8256C-C31E-410A-9306-1B640165FDBE}"
 	TargetFrameworkVersion="0"
 	>
 	<Platforms>
@@ -12,22 +12,26 @@
 		/>
 	</Platforms>
 	<ToolFiles>
+		<DefaultToolFile
+			FileName="masm.rules"
+		/>
 	</ToolFiles>
 	<Configurations>
 		<Configuration
-			Name="Debug|Win32"
-			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			Name="Release|Win32"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
-			CharacterSet="2"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="MASM"
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"
@@ -37,22 +41,27 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
+				PreprocessorDefinitions="NDEBUG"
+				MkTypLibCompatible="true"
+				SuppressStartupBanner="true"
+				TargetEnvironment="1"
 				HeaderFileName=""
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="0"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;GLQUAKE;DEBUGGL"
-				RuntimeLibrary="1"
+				Optimization="2"
+				InlineFunctionExpansion="1"
+				FavorSizeOrSpeed="1"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS"
+				RuntimeLibrary="0"
 				SuppressStartupBanner="true"
-				DebugInformationFormat="4"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_DEBUG"
+				PreprocessorDefinitions="NDEBUG"
 				Culture="1033"
 			/>
 			<Tool
@@ -60,11 +69,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="dxguid.lib opengl32.lib comctl32.lib winmm.lib wsock32.lib"
-				LinkIncremental="2"
+				AdditionalDependencies="dxguid.lib winmm.lib wsock32.lib opengl32.lib glu32.lib odbc32.lib odbccp32.lib"
+				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				GenerateManifest="false"
-				GenerateDebugInformation="true"
 				SubSystem="2"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
@@ -95,19 +103,21 @@
 			/>
 		</Configuration>
 		<Configuration
-			Name="Release|Win32"
+			Name="Debug|Win32"
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
-			CharacterSet="2"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="MASM"
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"
@@ -117,23 +127,26 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
+				PreprocessorDefinitions="_DEBUG"
+				MkTypLibCompatible="true"
+				SuppressStartupBanner="true"
+				TargetEnvironment="1"
 				HeaderFileName=""
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				InlineFunctionExpansion="2"
-				FavorSizeOrSpeed="1"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;GLQUAKE"
-				RuntimeLibrary="0"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS"
+				RuntimeLibrary="1"
 				SuppressStartupBanner="true"
+				DebugInformationFormat="4"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="NDEBUG"
+				PreprocessorDefinitions="_DEBUG"
 				Culture="1033"
 			/>
 			<Tool
@@ -141,10 +154,11 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="dxguid.lib opengl32.lib comctl32.lib winmm.lib wsock32.lib"
-				LinkIncremental="1"
+				AdditionalDependencies="dxguid.lib winmm.lib wsock32.lib opengl32.lib glu32.lib odbc32.lib odbccp32.lib"
+				LinkIncremental="2"
 				SuppressStartupBanner="true"
 				GenerateManifest="false"
+				GenerateDebugInformation="true"
 				SubSystem="2"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
@@ -180,138 +194,134 @@
 	<Files>
 		<Filter
 			Name="Source Files"
-			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
+			Filter="cpp;c;cxx;rc;def;r;odl;hpj;bat;for;f90"
 			>
 			<File
-				RelativePath=".\cd_win.c"
+				RelativePath="cd_win.c"
 				>
 			</File>
 			<File
-				RelativePath=".\chase.c"
+				RelativePath="chase.c"
 				>
 			</File>
 			<File
-				RelativePath=".\cl_demo.c"
+				RelativePath="cl_demo.c"
 				>
 			</File>
 			<File
-				RelativePath=".\cl_input.c"
+				RelativePath="cl_input.c"
 				>
 			</File>
 			<File
-				RelativePath=".\cl_main.c"
+				RelativePath="cl_main.c"
 				>
 			</File>
 			<File
-				RelativePath=".\cl_parse.c"
+				RelativePath="cl_parse.c"
 				>
 			</File>
 			<File
-				RelativePath=".\cl_tent.c"
+				RelativePath="cl_tent.c"
 				>
 			</File>
 			<File
-				RelativePath=".\cmd.c"
+				RelativePath="cmd.c"
 				>
 			</File>
 			<File
-				RelativePath=".\common.c"
+				RelativePath="common.c"
 				>
 			</File>
 			<File
-				RelativePath=".\conproc.c"
+				RelativePath="conproc.c"
 				>
 			</File>
 			<File
-				RelativePath=".\console.c"
+				RelativePath="console.c"
 				>
 			</File>
 			<File
-				RelativePath=".\crc.c"
+				RelativePath="crc.c"
 				>
 			</File>
 			<File
-				RelativePath=".\cvar.c"
+				RelativePath="cvar.c"
 				>
 			</File>
 			<File
-				RelativePath=".\gl_draw.c"
+				RelativePath="d_edge.c"
 				>
 			</File>
 			<File
-				RelativePath=".\gl_fog.c"
+				RelativePath="d_fill.c"
 				>
 			</File>
 			<File
-				RelativePath=".\gl_mesh.c"
+				RelativePath="d_init.c"
 				>
 			</File>
 			<File
-				RelativePath=".\gl_model.c"
+				RelativePath="d_modech.c"
 				>
 			</File>
 			<File
-				RelativePath=".\gl_refrag.c"
+				RelativePath="d_part.c"
 				>
 			</File>
 			<File
-				RelativePath=".\gl_rlight.c"
+				RelativePath="d_polyse.c"
 				>
 			</File>
 			<File
-				RelativePath=".\gl_rmain.c"
+				RelativePath="d_scan.c"
 				>
 			</File>
 			<File
-				RelativePath=".\gl_rmisc.c"
+				RelativePath="d_sky.c"
 				>
 			</File>
 			<File
-				RelativePath=".\gl_screen.c"
+				RelativePath="d_sprite.c"
 				>
 			</File>
 			<File
-				RelativePath=".\gl_sky.c"
+				RelativePath="d_surf.c"
 				>
 			</File>
 			<File
-				RelativePath=".\gl_texmgr.c"
+				RelativePath="d_vars.c"
 				>
 			</File>
 			<File
-				RelativePath=".\gl_vidnt.c"
+				RelativePath="d_zpoint.c"
 				>
 			</File>
 			<File
-				RelativePath=".\gl_warp.c"
+				RelativePath="draw.c"
 				>
 			</File>
 			<File
-				RelativePath=".\host.c"
+				RelativePath="host.c"
 				>
 			</File>
 			<File
-				RelativePath=".\host_cmd.c"
+				RelativePath="host_cmd.c"
 				>
 			</File>
 			<File
-				RelativePath=".\image.c"
+				RelativePath="in_win.c"
 				>
 			</File>
 			<File
-				RelativePath=".\in_win.c"
+				RelativePath="keys.c"
 				>
 			</File>
 			<File
-				RelativePath=".\keys.c"
+				RelativePath="mathlib.c"
 				>
 			</File>
 			<File
-				RelativePath=".\mathlib.c"
-				>
-			</File>
-			<File
-				RelativePath=".\menu.c"
+				RelativePath="menu.c"
 				>
 			</File>
 			<File
@@ -319,39 +329,47 @@
 				>
 			</File>
 			<File
-				RelativePath=".\net_dgrm.c"
+				RelativePath="model.c"
 				>
 			</File>
 			<File
-				RelativePath=".\net_loop.c"
+				RelativePath="net_dgrm.c"
 				>
 			</File>
 			<File
-				RelativePath=".\net_main.c"
+				RelativePath="net_loop.c"
 				>
 			</File>
 			<File
-				RelativePath=".\net_win.c"
+				RelativePath="net_main.c"
 				>
 			</File>
 			<File
-				RelativePath=".\net_wins.c"
+				RelativePath="net_vcr.c"
 				>
 			</File>
 			<File
-				RelativePath=".\net_wipx.c"
+				RelativePath="net_win.c"
 				>
 			</File>
 			<File
-				RelativePath=".\pr_cmds.c"
+				RelativePath="net_wins.c"
 				>
 			</File>
 			<File
-				RelativePath=".\pr_edict.c"
+				RelativePath="net_wipx.c"
 				>
 			</File>
 			<File
-				RelativePath=".\pr_exec.c"
+				RelativePath="pr_cmds.c"
+				>
+			</File>
+			<File
+				RelativePath="pr_edict.c"
+				>
+			</File>
+			<File
+				RelativePath="pr_exec.c"
 				>
 			</File>
 			<File
@@ -359,11 +377,35 @@
 				>
 			</File>
 			<File
-				RelativePath=".\r_alias.c"
+				RelativePath="r_aclip.c"
 				>
 			</File>
 			<File
-				RelativePath=".\r_brush.c"
+				RelativePath="r_alias.c"
+				>
+			</File>
+			<File
+				RelativePath="r_bsp.c"
+				>
+			</File>
+			<File
+				RelativePath="r_draw.c"
+				>
+			</File>
+			<File
+				RelativePath="r_edge.c"
+				>
+			</File>
+			<File
+				RelativePath="r_efrag.c"
+				>
+			</File>
+			<File
+				RelativePath="r_light.c"
+				>
+			</File>
+			<File
+				RelativePath="r_main.c"
 				>
 			</File>
 			<File
@@ -371,100 +413,104 @@
 				>
 			</File>
 			<File
-				RelativePath=".\r_part.c"
+				RelativePath="r_misc.c"
 				>
 			</File>
 			<File
-				RelativePath=".\r_sprite.c"
+				RelativePath="r_part.c"
 				>
 			</File>
 			<File
-				RelativePath=".\r_world.c"
+				RelativePath="r_sky.c"
 				>
 			</File>
 			<File
-				RelativePath=".\sbar.c"
+				RelativePath="r_sprite.c"
 				>
 			</File>
 			<File
-				RelativePath=".\snd_dma.c"
+				RelativePath="r_surf.c"
 				>
 			</File>
 			<File
-				RelativePath=".\snd_mem.c"
+				RelativePath="r_vars.c"
 				>
 			</File>
 			<File
-				RelativePath=".\snd_mix.c"
+				RelativePath="sbar.c"
 				>
 			</File>
 			<File
-				RelativePath=".\snd_win.c"
+				RelativePath="screen.c"
 				>
 			</File>
 			<File
-				RelativePath=".\sv_main.c"
+				RelativePath="snd_dma.c"
 				>
 			</File>
 			<File
-				RelativePath=".\sv_move.c"
+				RelativePath="snd_mem.c"
 				>
 			</File>
 			<File
-				RelativePath=".\sv_phys.c"
+				RelativePath="snd_mix.c"
 				>
 			</File>
 			<File
-				RelativePath=".\sv_user.c"
+				RelativePath="snd_win.c"
 				>
 			</File>
 			<File
-				RelativePath=".\sys_win.c"
+				RelativePath="sv_main.c"
 				>
 			</File>
 			<File
-				RelativePath=".\view.c"
+				RelativePath="sv_move.c"
 				>
 			</File>
 			<File
-				RelativePath=".\wad.c"
+				RelativePath="sv_phys.c"
 				>
 			</File>
 			<File
-				RelativePath=".\world.c"
+				RelativePath="sv_user.c"
 				>
 			</File>
 			<File
-				RelativePath=".\zone.c"
-				>
-			</File>
-		</Filter>
-		<Filter
-			Name="Resource Files"
-			Filter="ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
-			>
-			<File
-				RelativePath=".\fitzquake.ico"
+				RelativePath="sys_win.c"
 				>
 			</File>
 			<File
-				RelativePath=".\winquake.rc"
+				RelativePath="vid_win.c"
+				>
+			</File>
+			<File
+				RelativePath="view.c"
+				>
+			</File>
+			<File
+				RelativePath="wad.c"
+				>
+			</File>
+			<File
+				RelativePath="world.c"
+				>
+			</File>
+			<File
+				RelativePath="zone.c"
 				>
 			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
+			Filter="h;hpp;hxx;hm;inl;fi;fd"
 			>
 			<File
-				RelativePath=".\anorm_dots.h"
+				RelativePath=".\adivtab.h"
 				>
 			</File>
 			<File
 				RelativePath=".\anorms.h"
-				>
-			</File>
-			<File
-				RelativePath=".\asm_i386.h"
 				>
 			</File>
 			<File
@@ -504,31 +550,19 @@
 				>
 			</File>
 			<File
-				RelativePath=".\d_ifacea.h"
+				RelativePath=".\d_iface.h"
+				>
+			</File>
+			<File
+				RelativePath=".\d_local.h"
+				>
+			</File>
+			<File
+				RelativePath=".\dosisms.h"
 				>
 			</File>
 			<File
 				RelativePath=".\draw.h"
-				>
-			</File>
-			<File
-				RelativePath=".\gl_model.h"
-				>
-			</File>
-			<File
-				RelativePath=".\gl_texmgr.h"
-				>
-			</File>
-			<File
-				RelativePath=".\gl_warp_sin.h"
-				>
-			</File>
-			<File
-				RelativePath=".\glquake.h"
-				>
-			</File>
-			<File
-				RelativePath=".\image.h"
 				>
 			</File>
 			<File
@@ -545,6 +579,10 @@
 			</File>
 			<File
 				RelativePath=".\menu.h"
+				>
+			</File>
+			<File
+				RelativePath=".\model.h"
 				>
 			</File>
 			<File
@@ -565,6 +603,10 @@
 			</File>
 			<File
 				RelativePath=".\net_ser.h"
+				>
+			</File>
+			<File
+				RelativePath=".\net_vcr.h"
 				>
 			</File>
 			<File
@@ -592,11 +634,15 @@
 				>
 			</File>
 			<File
-				RelativePath=".\quakeasm.h"
+				RelativePath=".\quakedef.h"
 				>
 			</File>
 			<File
-				RelativePath=".\quakedef.h"
+				RelativePath=".\r_local.h"
+				>
+			</File>
+			<File
+				RelativePath=".\r_shared.h"
 				>
 			</File>
 			<File
@@ -653,6 +699,95 @@
 			</File>
 			<File
 				RelativePath=".\zone.h"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="Resource Files"
+			Filter="ico;cur;bmp;dlg;rc2;rct;bin;cnt;rtf;gif;jpg;jpeg;jpe"
+			>
+			<File
+				RelativePath="quake.ico"
+				>
+			</File>
+			<File
+				RelativePath="winquake.rc"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="ASM Files"
+			>
+			<File
+				RelativePath=".\d_draw.asm"
+				>
+			</File>
+			<File
+				RelativePath=".\d_draw16.asm"
+				>
+			</File>
+			<File
+				RelativePath=".\d_parta.asm"
+				>
+			</File>
+			<File
+				RelativePath=".\d_polysa.asm"
+				>
+			</File>
+			<File
+				RelativePath=".\d_scana.asm"
+				>
+			</File>
+			<File
+				RelativePath=".\d_spr8.asm"
+				>
+			</File>
+			<File
+				RelativePath=".\d_varsa.asm"
+				>
+			</File>
+			<File
+				RelativePath=".\math.asm"
+				>
+			</File>
+			<File
+				RelativePath=".\r_aclipa.asm"
+				>
+			</File>
+			<File
+				RelativePath=".\r_aliasa.asm"
+				>
+			</File>
+			<File
+				RelativePath=".\r_drawa.asm"
+				>
+			</File>
+			<File
+				RelativePath=".\r_edgea.asm"
+				>
+			</File>
+			<File
+				RelativePath=".\r_varsa.asm"
+				>
+			</File>
+			<File
+				RelativePath=".\snd_mixa.asm"
+				>
+			</File>
+			<File
+				RelativePath=".\surf16.asm"
+				>
+			</File>
+			<File
+				RelativePath=".\surf8.asm"
+				>
+			</File>
+			<File
+				RelativePath=".\sys_wina.asm"
+				>
+			</File>
+			<File
+				RelativePath=".\worlda.asm"
 				>
 			</File>
 		</Filter>
