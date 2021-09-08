@@ -74,6 +74,8 @@ float	r_avertexnormals[NUMVERTEXNORMALS][3] = {
 
 void R_AliasTransformAndProjectFinalVerts (finalvert_t *fv,
 	stvert_t *pstverts);
+void R_AliasTransformAndProjectFinalVerts_C (finalvert_t *fv,
+	stvert_t *pstverts);
 void R_AliasSetUpTransform (int trivial_accept);
 void R_AliasTransformVector (vec3_t in, vec3_t out);
 void R_AliasTransformFinalVert (finalvert_t *fv, auxvert_t *av,
@@ -536,7 +538,7 @@ void R_AliasPrepareUnclippedPoints (void)
 // FIXME: just use pfinalverts directly?
 	fv = pfinalverts;
 
-	R_AliasTransformAndProjectFinalVerts_C (fv, pstverts);
+	R_AliasTransformAndProjectFinalVerts (fv, pstverts);
 
 	if (r_affinetridesc.drawtype)
 		D_PolysetDrawFinalVerts (fv, r_anumverts);
