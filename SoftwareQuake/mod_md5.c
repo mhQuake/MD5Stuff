@@ -642,6 +642,14 @@ static void MD5_LoadSkins (md5header_t *hdr, char *shader)
 			// skins are in .lmp format; byte-swap the header (lmp skins are already flood-filled)
 			SwapPic (images[numskins]);
 
+			// another content hack - these texels are fullbright on the original MDL skin but were not on the MD5 replacement, so put them back how they should be
+			if (images[numskins]->width == 256 && images[numskins]->height == 256 && !strcmp (skinname, "progs/soldier_00_00.lmp"))
+			{
+				byte *data = images[numskins]->data;
+				data[46827] = data[46828] = data[46829] = data[47083] = data[47084] = data[47085] = data[47340] = data[47341] = 248;
+				data[47339] = 247;
+			}
+
 			// go to the next skin
 			numskins++;
 		}
