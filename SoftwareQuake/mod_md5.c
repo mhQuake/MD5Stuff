@@ -642,6 +642,10 @@ static void MD5_LoadSkins (md5header_t *hdr, char *shader)
 			// skins are in .lmp format; byte-swap the header (lmp skins are already flood-filled)
 			SwapPic (images[numskins]);
 
+			// this needs to be validated in software so that the skintable in d_polyse.c won't overflow; MAX_LBM_HEIGHT could be increased if required
+			if (images[numskins]->height > MAX_LBM_HEIGHT)
+				Sys_Error ("skin %s is taller than %d", skinname, MAX_LBM_HEIGHT);
+
 			// another content hack - these texels are fullbright on the original MDL skin but were not on the MD5 replacement, so put them back how they should be
 			if (images[numskins]->width == 256 && images[numskins]->height == 256 && !strcmp (skinname, "progs/soldier_00_00.lmp"))
 			{
