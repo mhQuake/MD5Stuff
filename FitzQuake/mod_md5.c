@@ -41,7 +41,10 @@ static int MD5_ReadMeshFile (char *filename, struct md5_model_t *mdl)
 	int version;
 	int curr_mesh = 0;
 	int i;
-	char *data = (char *) COM_LoadHunkFile (filename);
+
+	// we need to preserve the base pointer so we can free it properly after loading
+	char *basedata = (char *) COM_LoadMallocFile (filename);
+	char *data = basedata;
 
 	if (!data)
 	{
@@ -58,6 +61,7 @@ static int MD5_ReadMeshFile (char *filename, struct md5_model_t *mdl)
 			{
 				// Bad version
 				Con_DPrintf ("MD5_ReadMeshFile : bad model version for \"%s\"\n", filename);
+				free (basedata);
 				return 0;
 			}
 		}
@@ -85,7 +89,7 @@ static int MD5_ReadMeshFile (char *filename, struct md5_model_t *mdl)
 				struct md5_joint_t *joint = &mdl->baseSkel[i];
 
 				// Read whole line
-				if ((data = COM_ParseLine (data)) == NULL) return 0;
+				if ((data = COM_ParseLine (data)) == NULL) { free (basedata); return 0; }
 
 				if (sscanf (com_token, "%s %d ( %f %f %f ) ( %f %f %f )", joint->name, &joint->parent, &joint->pos[0], &joint->pos[1], &joint->pos[2], &joint->orient[0], &joint->orient[1], &joint->orient[2]) == 8)
 				{
@@ -179,6 +183,7 @@ static int MD5_ReadMeshFile (char *filename, struct md5_model_t *mdl)
 		}
 	}
 
+	free (basedata);
 	return 1;
 }
 
@@ -293,7 +298,10 @@ static int MD5_ReadAnimFile (char *filename, struct md5_anim_t *anim)
 	int numAnimatedComponents;
 	int frame_index;
 	int i;
-	char *data = (char *) COM_LoadHunkFile (filename);
+
+	// we need to preserve the base pointer so we can free it properly after loading
+	char *basedata = (char *) COM_LoadMallocFile (filename);
+	char *data = basedata;
 
 	if (!data)
 	{
@@ -310,6 +318,7 @@ static int MD5_ReadAnimFile (char *filename, struct md5_anim_t *anim)
 			{
 				// Bad version
 				Con_DPrintf ("Error: bad animation version for \"%s\"\n", filename);
+				free (basedata);
 				return 0;
 			}
 		}
@@ -352,7 +361,7 @@ static int MD5_ReadAnimFile (char *filename, struct md5_anim_t *anim)
 			for (i = 0; i < anim->num_joints; i++)
 			{
 				// Read whole line
-				if ((data = COM_ParseLine (data)) == NULL) return 0;
+				if ((data = COM_ParseLine (data)) == NULL) { free (basedata); return 0; }
 
 				// Read joint info
 				sscanf (com_token, " %s %d %d %d", jointInfos[i].name, &jointInfos[i].parent, &jointInfos[i].flags, &jointInfos[i].startIndex);
@@ -363,7 +372,7 @@ static int MD5_ReadAnimFile (char *filename, struct md5_anim_t *anim)
 			for (i = 0; i < anim->num_frames; i++)
 			{
 				// Read whole line
-				if ((data = COM_ParseLine (data)) == NULL) return 0;
+				if ((data = COM_ParseLine (data)) == NULL) { free (basedata); return 0; }
 
 				// Read bounding box
 				sscanf (com_token, " ( %f %f %f ) ( %f %f %f )", &anim->bboxes[i].min[0], &anim->bboxes[i].min[1], &anim->bboxes[i].min[2], &anim->bboxes[i].max[0], &anim->bboxes[i].max[1], &anim->bboxes[i].max[2]);
@@ -374,7 +383,7 @@ static int MD5_ReadAnimFile (char *filename, struct md5_anim_t *anim)
 			for (i = 0; i < anim->num_joints; i++)
 			{
 				// Read whole line
-				if ((data = COM_ParseLine (data)) == NULL) return 0;
+				if ((data = COM_ParseLine (data)) == NULL) { free (basedata); return 0; }
 
 				// Read base frame joint
 				if (sscanf (com_token, " ( %f %f %f ) ( %f %f %f )", &baseFrame[i].pos[0], &baseFrame[i].pos[1], &baseFrame[i].pos[2], &baseFrame[i].orient[0], &baseFrame[i].orient[1], &baseFrame[i].orient[2]) == 6)
@@ -390,7 +399,7 @@ static int MD5_ReadAnimFile (char *filename, struct md5_anim_t *anim)
 			for (i = 0; i < numAnimatedComponents; i++)
 			{
 				// parse a single token
-				if ((data = COM_Parse (data)) == NULL) return 0;
+				if ((data = COM_Parse (data)) == NULL) { free (basedata); return 0; }
 				animFrameData[i] = atof (com_token);
 			}
 
@@ -398,6 +407,9 @@ static int MD5_ReadAnimFile (char *filename, struct md5_anim_t *anim)
 			MD5_BuildFrameSkeleton (jointInfos, baseFrame, animFrameData, anim->skelFrames[frame_index], anim->num_joints);
 		}
 	}
+
+	// free the base data properly
+	free (basedata);
 
 	return 1;
 }
