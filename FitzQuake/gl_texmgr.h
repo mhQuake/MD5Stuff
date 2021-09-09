@@ -97,3 +97,8 @@ extern qboolean gl_mtexable;
 void GL_DisableMultitexture (void); //selects texture unit 0
 void GL_EnableMultitexture (void); //selects texture unit 1
 void GL_Bind (gltexture_t *texture);
+
+#ifdef UNDERWATER_WARP
+void GL_Unbind (void);
+#endif
+

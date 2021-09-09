@@ -59,6 +59,12 @@ refdef_t	r_refdef;
 
 mleaf_t		*r_viewleaf, *r_oldviewleaf;
 
+#ifdef UNDERWATER_WARP
+qboolean r_dowarp;
+
+void R_WarpScreen (void);
+#endif
+
 int		d_lightstylevalue[256];	// 8.8 fraction of base light value
 
 
@@ -315,14 +321,24 @@ R_SetupGL
 */
 void R_SetupGL (void)
 {
-	//johnfitz -- rewrote this section
-	glMatrixMode(GL_PROJECTION);
-    glLoadIdentity ();
+#ifdef UNDERWATER_WARP
+	if (r_dowarp)
+	{
+		// this will go down into sbar territory so refresh it
+		glViewport (0, 0, vid.maxwarpwidth, vid.maxwarpheight);
+		Sbar_Changed ();
+	}
+	else
+#endif
 	glViewport (glx + r_refdef.vrect.x,
 				gly + glheight - r_refdef.vrect.y - r_refdef.vrect.height,
 				r_refdef.vrect.width,
 				r_refdef.vrect.height);
 	//johnfitz
+
+	//johnfitz -- rewrote this section
+	glMatrixMode(GL_PROJECTION);
+    glLoadIdentity ();
 
     GL_SetFrustum (r_fovx, r_fovy); //johnfitz -- use r_fov* vars
 
@@ -399,6 +415,10 @@ void R_SetupView (void)
 	r_oldviewleaf = r_viewleaf;
 	r_viewleaf = Mod_PointInLeaf (r_origin, cl.worldmodel);
 
+#ifdef UNDERWATER_WARP
+	r_dowarp = r_waterwarp.value && (r_viewleaf->contents <= CONTENTS_WATER);
+#endif
+
 	V_SetContentsColor (r_viewleaf->contents);
 	V_CalcBlend ();
 
@@ -407,6 +427,8 @@ void R_SetupView (void)
 	//johnfitz -- calculate r_fovx and r_fovy here
 	r_fovx = r_refdef.fov_x;
 	r_fovy = r_refdef.fov_y;
+
+#ifndef UNDERWATER_WARP
 	if (r_waterwarp.value)
 	{
 		int contents = Mod_PointInLeaf (r_origin, cl.worldmodel)->contents;
@@ -418,6 +440,7 @@ void R_SetupView (void)
 		}
 	}
 	//johnfitz
+#endif
 
 	R_SetFrustum (r_fovx, r_fovy); //johnfitz -- use r_fov* vars
 
@@ -853,6 +876,11 @@ void R_RenderView (void)
 		R_RenderScene ();
 	}
 	//johnfitz
+
+#ifdef UNDERWATER_WARP
+	if (r_dowarp)
+		R_WarpScreen ();
+#endif
 
 	//johnfitz -- modified r_speeds output
 	time2 = Sys_FloatTime ();

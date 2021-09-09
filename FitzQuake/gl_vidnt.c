@@ -803,6 +803,10 @@ void VID_Restart (void)
 		//warpimages needs to be recalculated
 		TexMgr_RecalcWarpImageSize ();
 
+#ifdef UNDERWATER_WARP
+		R_InitUnderwaterWarpTexture ();
+#endif
+
 		//conwidth and conheight need to be recalculated
 		vid.conwidth = (scr_conwidth.value > 0) ? (int)scr_conwidth.value : (scr_conscale.value > 0) ? (int)(vid.width/scr_conscale.value) : vid.width;
 		vid.conwidth = CLAMP (320, vid.conwidth, vid.width);

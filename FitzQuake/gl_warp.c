@@ -265,3 +265,123 @@ void R_UpdateWarpTextures (void)
 	//if viewsize is less than 100, we need to redraw the frame around the viewport
 	scr_tileclear_updates = 0;
 }
+
+
+#ifdef UNDERWATER_WARP
+// values are consistent with tests at http://forums.insideqc.com/viewtopic.php?f=3&t=5827 at 1280x960
+// ==================================================================================================================================
+// this is a good-quality waterwarp, consistent with software Quake, using (mostly) GL 1.1 fuctionality; the only thing not from
+// GL 1.1 is GL_CLAMP_TO_EDGE, which requires GL 1.2, but that could be replaced with GL_REPEAT and the edge-handling will prevent
+// it looking ugly.  GL_ARB_texture_non_power_of_two is not required but can be used if available.  the little-known and little-used
+// texture object 0 is used for the screen copy target, which avoids needing to specify a texture via Fitz's TexMgr, but requires
+// implementing GL_Unbind to keep texture binding states in sync.
+// ==================================================================================================================================
+cvar_t r_waterwarp_cycle = {"r_waterwarp_cycle", "5"};
+cvar_t r_waterwarp_amp = {"r_waterwarp_amp", "150"};
+cvar_t r_waterwarp_downscale = {"r_waterwarp_downscale", "1"};
+
+#ifndef GL_CLAMP_TO_EDGE
+#define GL_CLAMP_TO_EDGE                        0x812F
+#endif
+
+void R_InitUnderwaterWarpTexture (void)
+{
+	if (strstr (gl_extensions, "GL_ARB_texture_non_power_of_two") && !r_waterwarp_downscale.value)
+	{
+		// let them choose if they don't want this
+		vid.maxwarpwidth = vid.width;
+		vid.maxwarpheight = vid.height;
+	}
+	else
+	{
+		// called at startup and whenever the video mode changes
+		for (vid.maxwarpwidth = 1; vid.maxwarpwidth < vid.width; vid.maxwarpwidth <<= 1);
+		for (vid.maxwarpheight = 1; vid.maxwarpheight < vid.height; vid.maxwarpheight <<= 1);
+
+		// take a power of 2 down from the screen res so that we can maintain perf if warping
+		vid.maxwarpwidth >>= 1;
+		vid.maxwarpheight >>= 1;
+	}
+}
+
+
+void R_CalcUnderwaterCoords (float x, float y, float CYCLE_X, float CYCLE_Y, float AMP_X, float AMP_Y)
+{
+	// vkQuake is actually 99% of the way there; all that it's missing is a sign flip and it's AMP is half what it should be.
+	// !!!!! this was correct at the time i originally wrote this; vkQuake may have been changed since then !!!!!
+	// this is now extremely close to consistency with mankrip's tests
+	const float texX = (x - (sin (y * CYCLE_X + cl.time) * AMP_X)) * (1.0f - AMP_X * 2.0f) + AMP_X;
+	const float texY = (y - (sin (x * CYCLE_Y + cl.time) * AMP_Y)) * (1.0f - AMP_Y * 2.0f) + AMP_Y;
+
+	glTexCoord2f (texX, texY);
+	glVertex2f (x * 2 - 1, y * 2 - 1);
+}
+
+
+void R_WarpScreen (void)
+{
+	int x, y;
+
+	// ripped this from vkQuake at https://github.com/Novum/vkQuake/blob/master/Shaders/screen_warp.comp
+	// !!!!! this was the version used in vkQuake at the time i originally wrote this; it may have been changed since then !!!!!
+	// our x and y coords are already incoming at 0..1 range so we don't need to rescale them.
+	const float aspect = (float) r_refdef.vrect.width / (float) r_refdef.vrect.height;
+	const float CYCLE_X = M_PI * r_waterwarp_cycle.value; // tune or cvarize as you wish
+	const float CYCLE_Y = CYCLE_X * aspect;
+	const float AMP_X = 1.0f / r_waterwarp_amp.value; // tune or cvarize as you wish
+	const float AMP_Y = AMP_X * aspect;
+
+	// copy over the texture
+	GL_Unbind (); // binds texture object 0
+	glCopyTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA, 0, 0, vid.maxwarpwidth, vid.maxwarpheight, 0);
+
+	// because we're using glCopyTexImage2D we need to specify this to satisfy OpenGL texture completeness rules
+	// this should always be GL_LINEAR irrespective of gl_texturemode so that the sine warp looks correct
+	glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+	// see note on GL_CLAMP_TO_EDGE above; this could be replaced with GL_REPEAT if you wish to keep pure GL 1.1; there would be no visual degradation
+	glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	// switch vp, ortho, mvp, etc; this should be the same viewport rect as is set in the main glViewport call for the 3D scene; if you've changed it from
+	// the stock Fitz code, you should change this too to match.
+	glViewport (glx + r_refdef.vrect.x,
+				gly + glheight - r_refdef.vrect.y - r_refdef.vrect.height,
+				r_refdef.vrect.width,
+				r_refdef.vrect.height);
+
+	// in a shader you wouldn't need to bother doing this; the positions would be pass-through to output
+	glMatrixMode (GL_PROJECTION);
+	glLoadIdentity ();
+
+	// in a shader you wouldn't need to bother doing this; the positions would be pass-through to output
+	glMatrixMode (GL_MODELVIEW);
+	glLoadIdentity ();
+
+	glDisable (GL_DEPTH_TEST);
+	glDisable (GL_CULL_FACE);
+	glDisable (GL_BLEND);
+	glDisable (GL_ALPHA_TEST);
+	glColor4f (1, 1, 1, 1);
+
+	// draw the warped view; tune or cvarize this all you wish; maybe you'll create an r_underwaterwarpquality cvar?
+	// yeah, it's a lot of verts - so what?  There's far far more pixels than vertexes so vertex count isn't that big a deal here.
+	for (x = 0; x < 32; x++)
+	{
+		glBegin (GL_TRIANGLE_STRIP);
+
+		for (y = 0; y <= 32; y++)
+		{
+			R_CalcUnderwaterCoords ((float) x / 32.0f, (float) y / 32.0f, CYCLE_X, CYCLE_Y, AMP_X, AMP_Y);
+			R_CalcUnderwaterCoords ((float) (x + 1) / 32.0f, (float) y / 32.0f, CYCLE_X, CYCLE_Y, AMP_X, AMP_Y);
+		}
+
+		glEnd ();
+	}
+
+	// if viewsize is less than 100, we need to redraw the frame around the viewport
+	scr_tileclear_updates = 0;
+}
+#endif
+

@@ -235,6 +235,12 @@ void R_Init (void)
 
 	Cvar_RegisterVariable (&gl_subdivide_size, NULL); //johnfitz -- moved here from gl_model.c
 
+#ifdef UNDERWATER_WARP
+	Cvar_RegisterVariable (&r_waterwarp_cycle, NULL);
+	Cvar_RegisterVariable (&r_waterwarp_amp, NULL);
+	Cvar_RegisterVariable (&r_waterwarp_downscale, R_InitUnderwaterWarpTexture);
+#endif
+
 	R_InitParticles ();
 	R_SetClearColor_f (); //johnfitz
 

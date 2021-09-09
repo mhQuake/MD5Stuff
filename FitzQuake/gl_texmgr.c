@@ -608,6 +608,10 @@ void TexMgr_Init (void)
 	//set safe size for warpimages
 	gl_warpimagesize = 0;
 	TexMgr_RecalcWarpImageSize ();
+
+#ifdef UNDERWATER_WARP
+	R_InitUnderwaterWarpTexture ();
+#endif
 }
 
 /*
@@ -1446,3 +1450,13 @@ void GL_Bind (gltexture_t *texture)
 		texture->visframe = r_framecount;
 	}
 }
+
+
+#ifdef UNDERWATER_WARP
+void GL_Unbind (void)
+{
+	glBindTexture (GL_TEXTURE_2D, 0);
+	currenttexture = -1;
+}
+#endif
+
