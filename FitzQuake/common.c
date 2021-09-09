@@ -1697,6 +1697,8 @@ byte *COM_LoadFile (char *path, int usehunk)
 		else
 			buf = loadbuf;
 	}
+	else if (usehunk == 5)
+		buf = malloc (len + 1);
 	else
 		Sys_Error ("COM_LoadFile: bad usehunk");
 
@@ -1710,6 +1712,11 @@ byte *COM_LoadFile (char *path, int usehunk)
 	COM_CloseFile (h);
 
 	return buf;
+}
+
+byte *COM_LoadMallocFile (char *path)
+{
+	return COM_LoadFile (path, 5);
 }
 
 byte *COM_LoadHunkFile (char *path)
