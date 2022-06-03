@@ -27,6 +27,126 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 extern model_t *loadmodel;
 
+#define _alloca16(x) ((void *) ((((int) _alloca ((x) + 15)) + 15) & ~15))
+
+
+static qboolean R_FaceNegativePolarity (struct md5_mesh_t *mesh, int trinum)
+{
+	float area;
+	float d0[5], d1[5];
+
+	struct md5_vertex_t *a = &mesh->vertices[mesh->triangles[trinum].vertindex[0]];
+	struct md5_vertex_t *b = &mesh->vertices[mesh->triangles[trinum].vertindex[1]];
+	struct md5_vertex_t *c = &mesh->vertices[mesh->triangles[trinum].vertindex[2]];
+
+	d0[3] = b->st[0] - a->st[0];
+	d0[4] = b->st[1] - a->st[1];
+
+	d1[3] = c->st[0] - a->st[0];
+	d1[4] = c->st[1] - a->st[1];
+
+	return !((area = d0[3] * d1[4] - d0[4] * d1[3]) >= 0);
+}
+
+
+typedef struct tangentVert_s {
+	qboolean polarityUsed[2];
+	int negativeRemap;
+} tangentVert_t;
+
+
+static void	R_DuplicateMirroredVertexes (struct md5_mesh_t *mesh)
+{
+	tangentVert_t *tverts, *vert;
+	struct md5_vertex_t *oldverts;
+	int				i, j;
+	int				totalVerts;
+	int				numMirror;
+
+	tverts = (tangentVert_t *) _alloca16 (mesh->num_verts * sizeof (*tverts));
+	memset (tverts, 0, mesh->num_verts * sizeof (*tverts));
+
+	// determine texture polarity of each surface
+	// mark each vert with the polarities it uses
+	for (i = 0; i < mesh->num_tris; i++)
+	{
+		mtriangle_t *tri = &mesh->triangles[i];
+		int	polarity = R_FaceNegativePolarity (mesh, i);
+
+		for (j = 0; j < 3; j++)
+		{
+			tverts[tri->vertindex[j]].polarityUsed[polarity] = true;
+		}
+	}
+
+	// now create new verts as needed
+	totalVerts = mesh->num_verts;
+
+	for (i = 0; i < mesh->num_verts; i++)
+	{
+		vert = &tverts[i];
+
+		if (vert->polarityUsed[0] && vert->polarityUsed[1])
+		{
+			vert->negativeRemap = totalVerts;
+			totalVerts++;
+		}
+	}
+
+	mesh->num_mirrored_verts = totalVerts - mesh->num_verts;
+
+	// now create the new list
+	if (totalVerts == mesh->num_verts)
+	{
+		mesh->mirrored_vertices = NULL;
+		return;
+	}
+
+	// these are unused in the current implementation and we could save some memory by just not setting them up
+	mesh->mirrored_vertices = (int *) Hunk_Alloc (mesh->num_mirrored_verts * sizeof (int));
+
+	// this leaks the original mesh->vertices; since they're on hunk, Host_ClearMemory will free the leaked memory between maps anyway, but a more robust
+	// implementation might allocate mesh->vertices in temporary memory and memcpy it over above if addtional verts are not needed.
+	oldverts = mesh->vertices;
+	mesh->vertices = (struct md5_vertex_t *) Hunk_Alloc (totalVerts * sizeof (struct md5_vertex_t));
+	memcpy (mesh->vertices, oldverts, mesh->num_verts * sizeof (struct md5_vertex_t));
+
+	// create the duplicates
+	numMirror = 0;
+
+	for (i = 0; i < mesh->num_verts; i++)
+	{
+		if ((j = tverts[i].negativeRemap) != 0)
+		{
+			mesh->vertices[j].st[0] = mesh->vertices[i].st[0];
+			mesh->vertices[j].st[1] = mesh->vertices[i].st[1];
+			mesh->vertices[j].start = mesh->vertices[i].start;
+			mesh->vertices[j].count = mesh->vertices[i].count;
+			mesh->mirrored_vertices[numMirror] = i;
+			numMirror++;
+		}
+	}
+
+	mesh->num_verts = totalVerts;
+
+	// change the indexes
+	for (i = 0; i < mesh->num_tris; i++)
+	{
+		for (j = 0; j < 3; j++)
+		{
+			int index = mesh->triangles[i].vertindex[j];
+
+			if (tverts[index].negativeRemap && R_FaceNegativePolarity (mesh, i))
+			{
+				mesh->triangles[i].vertindex[j] = tverts[index].negativeRemap;
+			}
+		}
+	}
+
+	// du0licates setting this above, but this was copy/paste from the Doom 3 code so i just kept it.... :P
+	mesh->num_verts = totalVerts;
+}
+
 
 /*
 ==================
@@ -748,6 +868,9 @@ qboolean Mod_LoadMD5Model (model_t *mod, void *buffer)
 
 	// allocate memory for the animated skeleton
 	hdr->skeleton = (struct md5_joint_t *) Hunk_Alloc (sizeof (struct md5_joint_t) * hdr->md5anim.num_joints);
+
+	// fix up mirron seam verts
+	R_DuplicateMirroredVertexes (&hdr->md5mesh.meshes[0]);
 
 	// build the baseframe normals
 	MD5_BuildBaseNormals (hdr, &hdr->md5mesh.meshes[0]);

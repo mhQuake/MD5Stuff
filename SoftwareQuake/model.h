@@ -352,6 +352,9 @@ struct md5_mesh_t
 	int num_tris;
 	int num_weights;
 
+	int num_mirrored_verts;
+	int *mirrored_vertices;
+
 	char shader[256];
 };
 
