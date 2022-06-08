@@ -230,6 +230,63 @@ static void MD5_PrepareMesh (const struct md5_mesh_t *mesh, const struct md5_joi
 }
 
 
+void MD5_WeldNormals (md5header_t *hdr)
+{
+	md5polyvert_t
+		* pervert
+	,	* vert
+		;
+	int
+		v
+	,	w
+	,	numverts
+	,	numnormals
+		;
+
+	// these have already been built in MD5_BuildBaseNormals so we can just reference the array directly again
+	md5polyvert_t *vertexes = r_md5vertexes;
+
+	// weld all normals per vertex position
+	numverts = hdr->md5mesh.meshes[0].num_verts;
+
+	for (pervert = vertexes, v = 0 ; v < numverts ; v++, pervert++)
+	{
+		vec3_t
+			newnormal = {0.0f, 0.0f, 0.0f}
+			;
+		numnormals = 0;
+
+		// compute new normal
+		for (vert = pervert, w = v ; w < numverts ; w++, vert++)
+		{
+			if (vert->position[0] == pervert->position[0] &&
+				vert->position[1] == pervert->position[1] &&
+				vert->position[2] == pervert->position[2])
+			{
+				VectorAdd (newnormal, hdr->vnorms[w].normal, newnormal);
+				numnormals++;
+			}
+		}
+
+		if (numnormals > 1)
+		{
+			VectorNormalize (newnormal);
+
+			// iterate again, applying the new normal to all corresponding vertices
+			for (vert = pervert, w = v ; w < numverts ; w++, vert++)
+			{
+				if (vert->position[0] == pervert->position[0] &&
+					vert->position[1] == pervert->position[1] &&
+					vert->position[2] == pervert->position[2])
+				{
+					VectorCopy (newnormal, hdr->vnorms[w].normal);
+				}
+			}
+		}
+	}
+}
+
+
 /*
 ==================
 MD5_BuildBaseNormals

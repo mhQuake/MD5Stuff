@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 extern model_t *loadmodel;
 qboolean Mod_CheckFullbrights (byte *pixels, int count);
 void MD5_BuildBaseNormals (md5header_t *hdr, struct md5_mesh_t *mesh);
+void MD5_WeldNormals (md5header_t *hdr);
 
 
 /*
@@ -634,6 +635,7 @@ qboolean Mod_LoadMD5Model (model_t *mod, void *buffer)
 
 	// build the baseframe normals
 	MD5_BuildBaseNormals (hdr, &hdr->md5mesh.meshes[0]);
+	MD5_WeldNormals (hdr);
 
 	// load textures from .lmp files
 	MD5_LoadSkins (hdr, hdr->md5mesh.meshes[0].shader);
