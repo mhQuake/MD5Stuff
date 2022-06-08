@@ -14,5 +14,5 @@ The MD5 drawing code uses OpenGL 1.1 calls *only*, so there are no vertex buffer
 
 Finally, it should go without saying that this is a techdemo sample implementation, so you shouldn't have expectations around it being usable for general-case Quake play, especially with modern maps.
 
-2022-06-08 - Updated Software and Fitz|GL paths with MD5_WeldNormals via Mankrip (thanks!)
+2022-06-08 - Updated Software and Fitz|GL paths with MD5_WeldNormals via Mankrip (thanks!)  
 2021-09-08 - Now with Software Quake MD5 support.
